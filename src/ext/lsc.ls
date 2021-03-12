@@ -1,22 +1,11 @@
 require! <[fs path fs-extra livescript uglify-js]>
-require! <[../aux ../srcbuild]>
+require! <[./base ../aux ../adapter]>
 
-lscbuild = (opt={}) ->
-  @opt = opt
-  @log = opt.logger or aux.logger
-  @base = opt.base or '.'
-  @srcdir = path.normalize(path.join(@base, opt.srcdir or 'src/ls'))
-  @desdir = path.normalize(path.join(@base, opt.desdir or 'static/js'))
-  @builder = new srcbuild do
-    base: @srcdir
-    get-dependencies: (file) ~> return []
-    is-supported: (file) ~> /\.ls$/.exec(file) and file.startsWith(@srcdir)
-    build: (files) ~> @build files
-  @builder.init!
-  @
 
-lscbuild.prototype = Object.create(Object.prototype) <<< do
-  get-builder: -> @builder
+lscbuild = (opt={}) -> @init({srcdir: 'src/ls', desdir: 'static/js'} <<< opt)
+lscbuild.prototype = Object.create(base.prototype) <<< do
+  get-dependencies: (file) -> return []
+  is-supported: (file) -> /\.ls$/.exec(file) and file.startsWith(@srcdir)
   build: (files) ->
     for {file, mtime} in files =>
       src = file
@@ -37,6 +26,5 @@ lscbuild.prototype = Object.create(Object.prototype) <<< do
       catch
         @log.error "[BUILD] #src failed: "
         @log.error e.message.toString!
-    return
 
 module.exports = lscbuild

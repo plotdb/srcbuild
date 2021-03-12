@@ -4,7 +4,7 @@ fs = require('fs');
 aux = {
   logger: {
     info: console.info,
-    warning: console.warning,
+    warn: console.warn,
     error: console.error
   },
   newer: function(f1, files, strict){

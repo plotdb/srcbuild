@@ -1,31 +1,19 @@
 require! <[fs path fs-extra stylus uglifycss]>
-require! <[../aux ../srcbuild]>
+require! <[./base ../aux ../adapter]>
 
-stylusbuild = (opt={}) ->
-  @opt = opt
-  @log = opt.logger or aux.logger
-  @base = opt.base or '.'
-  @srcdir = path.normalize(path.join(@base, opt.srcdir or 'src/styl'))
-  @desdir = path.normalize(path.join(@base, opt.desdir or 'static/css'))
-  @builder = new srcbuild do
-    base: @srcdir
-    get-dependencies: (file) ~>
-      code = fs.read-file-sync file
-      ret = code
-        .split \\n
-        .map -> /\s*(@import)\s+(.+)$/.exec(it)
-        .filter -> it
-        .map -> it.2.replace(/'/g, '').replace(/(\.styl)?$/, '.styl')
-        .map -> it
-      root = path.resolve('.') + '/'
-      return (ret or []).map ~> it.replace(root, '')
-    is-supported: (file) ~> /\.styl$/.exec(file) and file.startsWith(@srcdir)
-    build: (files) ~> @build files
-  @builder.init!
-  @
-
-stylusbuild.prototype = Object.create(Object.prototype) <<< do
-  get-builder: -> @builder
+stylusbuild = (opt={}) -> @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)
+stylusbuild.prototype = Object.create(base.prototype) <<< do
+  get-dependencies: (file) ->
+    code = fs.read-file-sync file
+    ret = code
+      .split \\n
+      .map -> /\s*(@import)\s+(.+)$/.exec(it)
+      .filter -> it
+      .map -> it.2.replace(/'/g, '').replace(/(\.styl)?$/, '.styl')
+      .map -> it
+    root = path.resolve('.') + '/'
+    return (ret or []).map ~> it.replace(root, '')
+  is-supported: (file) -> /\.styl$/.exec(file) and file.startsWith(@srcdir)
   build: (files) ->
     for {file, mtime} in files =>
       src = file
@@ -50,6 +38,5 @@ stylusbuild.prototype = Object.create(Object.prototype) <<< do
       catch
         @log.error "[BUILD] #src failed: "
         @log.error e.message.toString!
-
 
 module.exports = stylusbuild

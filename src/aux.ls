@@ -1,6 +1,6 @@
 require! <[fs]>
 aux = do
-  logger: {info: console.info, warning: console.warning, error: console.error}
+  logger: {info: console.info, warn: console.warn, error: console.error}
   # is f1 newer than any file in files?
   # or, is f1 newer than files ( as timestamp )?
   # strict: false for >=, or true for >

@@ -1,14 +1,15 @@
 require! <[fs path fs-extra chokidar ./aux]>
 
-srcwatch = (opt={}) ->
+watch = (opt={}) ->
   @opt = opt
-  @builders = opt.builders
+  @adapters = opt.adapters or []
   @chokidar-cfg = {persistent: true, ignored: [], ignoreInitial: true}
   @log = opt.logger or aux.logger
   @init!
   @
 
-srcwatch.prototype = Object.create(Object.prototype) <<< do
+watch.prototype = Object.create(Object.prototype) <<< do
+  add-adapter: (b) -> if Array.isArray(b) => @adapters ++= b else @adapters.push b
   init: ->
     @watcher = chokidar.watch <[.]>, @chokidar-cfg
       .on \add, (~> @add path.normalize it)
@@ -16,8 +17,8 @@ srcwatch.prototype = Object.create(Object.prototype) <<< do
       .on \unlink, (~> @unlink path.normalize it)
     @log.info "watching src for file change"
 
-  add: (file) -> @builders.map -> it.change file
-  change: (file) -> @builders.map -> it.change file
-  unlink: (file) -> @builders.map -> it.unlink file
+  add: (file) -> @adapters.map -> it.change file
+  change: (file) -> @adapters.map -> it.change file
+  unlink: (file) -> @adapters.map -> it.unlink file
 
-module.exports = srcwatch
+module.exports = watch

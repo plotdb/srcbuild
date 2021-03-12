@@ -1,6 +1,6 @@
 require! <[fs path fs-extra pug ./aux]>
 
-srcbuild = (opt={}) ->
+adapter = (opt={}) ->
   @opt = opt
   @base = opt.base or '.'
   @log = opt.logger or aux.logger
@@ -11,7 +11,7 @@ srcbuild = (opt={}) ->
   if opt.build => @build = that
   @
 
-srcbuild.prototype = Object.create(Object.prototype) <<< do
+adapter.prototype = Object.create(Object.prototype) <<< do
   get-dependencies: -> []
   is-supported: (file) -> return false
   unlink: ->
@@ -44,4 +44,4 @@ srcbuild.prototype = Object.create(Object.prototype) <<< do
         if @is-supported file => @log-dependencies(file)
     recurse @base
 
-module.exports = srcbuild
+module.exports = adapter

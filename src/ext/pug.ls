@@ -1,35 +1,15 @@
 require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
-require! <[../aux ../srcbuild]>
+require! <[./base ../aux ../adapter]>
 
 pugbuild = (opt={}) ->
-  @opt = opt
-  @log = opt.logger or aux.logger
+  @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @i18n = opt.i18n or null
-  @base = opt.base or '.'
   @intlbase = opt.intlbase or 'intl'
-  @srcdir = path.normalize(path.join(@base, opt.srcdir or 'src/pug'))
-  @desdir = path.normalize(path.join(@base, opt.desdir or 'static'))
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @extapi = @get-extapi!
-  @builder = new srcbuild do
-    base: @srcdir
-    get-dependencies: (file) ~>
-      code = fs.read-file-sync file
-
-      ret = pug.compileClientWithDependenciesTracked(
-        code,
-        {basedir: path.join(path.dirname file), filename: file} <<< @extapi
-      )
-      root = path.resolve('.') + '/'
-      return (ret.dependencies or []).map ~> it.replace(root, '')
-
-    is-supported: (file) ~> /\.pug$/.exec(file) and file.startsWith(@srcdir)
-    build: (files) ~> @build files
-  @builder.init!
   @
 
-pugbuild.prototype = Object.create(Object.prototype) <<< do
-  get-builder: -> @builder
+pugbuild.prototype = Object.create(base.prototype) <<< do
   resolve: (fn,src,opt) ->
     if !/^@/.exec(fn) => return path.resolve(path.join(path.dirname(src), fn))
     try
@@ -68,6 +48,16 @@ pugbuild.prototype = Object.create(Object.prototype) <<< do
               console.log "[ERROR@#it]: ", e
         return ret
 
+  get-dependencies: (file) ->
+    code = fs.read-file-sync file
+    ret = pug.compileClientWithDependenciesTracked(
+      code,
+      {basedir: path.join(path.dirname file), filename: file} <<< @extapi
+    )
+    root = path.resolve('.') + '/'
+    return (ret.dependencies or []).map ~> it.replace(root, '')
+
+  is-supported: (file) -> /\.pug$/.exec(file) and file.startsWith(@srcdir)
 
   build: (files) ->
     _ = (lng = '') ~>
@@ -110,6 +100,5 @@ pugbuild.prototype = Object.create(Object.prototype) <<< do
       if i >= lngs.length => return
       _(lngs[i]).then -> consume(i + 1)
     consume!
-
 
 module.exports = pugbuild
