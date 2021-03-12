@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+trap "kill 0" exit
+set -euo pipefail
+rm -rf dist
+mkdir -p dist
+echo "building src folder ..."
+npx lsc -o ./dist/ -cb src
+echo "building cli ..."
+echo "#!/usr/bin/env node" > ./dist/cli
+cat ./dist/cli.js >> ./dist/cli
+chmod 755 ./dist/cli
+wait
