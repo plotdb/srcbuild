@@ -25,16 +25,18 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     list.map (f) ~>
       set = if @dependencies[f] => that else (@dependencies[f] = new Set!)
       set.add file
-  change: (file) ->
-    files = []
-    if !fs.exists-sync file => return
-    mtime = +fs.stat-sync(file).mtime
-    if @is-supported(file) =>
-      files.push {file, mtime}
-      @log-dependencies file
-    if @dependencies[file] =>
-      files ++= Array.from(@dependencies[file]).map -> {file:it, mtime}
-    @build files
+  change: (files) ->
+    affected-files = []
+    files = if Array.isArray(files) => files else [files]
+    files.map (file) ~>
+      if !fs.exists-sync file => return
+      mtime = +fs.stat-sync(file).mtime
+      if @is-supported(file) =>
+        affected-files.push {file, mtime}
+        @log-dependencies file
+      if @dependencies[file] =>
+        affected-files ++= Array.from(@dependencies[file]).map -> {file:it, mtime}
+    @build affected-files
   init: ->
     recurse = (root) ~>
       if !fs.exists-sync(root) => return

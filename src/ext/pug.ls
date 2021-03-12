@@ -2,11 +2,11 @@ require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
 require! <[./base ../aux ../adapter]>
 
 pugbuild = (opt={}) ->
+  @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
-  @extapi = @get-extapi!
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
@@ -37,15 +37,15 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
         'md': (text, opt) -> marked text
       md: marked
       yaml: -> js-yaml.safe-load fs.read-file-sync it
-      yamls: (dir) ->
+      yamls: (dir) ~>
         ret = fs.readdir-sync dir
           .map -> "#dir/#it"
           .filter -> /\.yaml$/.exec(it)
-          .map ->
+          .map ~>
             try
               js-yaml.safe-load(fs.read-file-sync it)
             catch e
-              console.log "[ERROR@#it]: ", e
+              @log.error "[ERROR@#it]: ", e
         return ret
 
   get-dependencies: (file) ->

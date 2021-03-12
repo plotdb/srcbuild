@@ -4,7 +4,7 @@ require! <[./base ../aux ../adapter]>
 stylusbuild = (opt={}) -> @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)
 stylusbuild.prototype = Object.create(base.prototype) <<< do
   get-dependencies: (file) ->
-    code = fs.read-file-sync file
+    code = fs.read-file-sync file .toString!
     ret = code
       .split \\n
       .map -> /\s*(@import)\s+(.+)$/.exec(it)

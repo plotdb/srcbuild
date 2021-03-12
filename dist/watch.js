@@ -52,6 +52,12 @@ watch.prototype = import$(Object.create(Object.prototype), {
       return it.unlink(file);
     });
   }
+  /*change = (file) -> 
+    change-list.push file
+    change-debounced!
+  change-debounced = ~>
+    @adapters.map -> it.change change-list
+  */
 });
 module.exports = watch;
 function import$(obj, src){

@@ -48,29 +48,35 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       return set.add(file);
     });
   },
-  change: function(file){
-    var files, mtime;
-    files = [];
-    if (!fs.existsSync(file)) {
-      return;
-    }
-    mtime = +fs.statSync(file).mtime;
-    if (this.isSupported(file)) {
-      files.push({
-        file: file,
-        mtime: mtime
-      });
-      this.logDependencies(file);
-    }
-    if (this.dependencies[file]) {
-      files = files.concat(Array.from(this.dependencies[file]).map(function(it){
-        return {
-          file: it,
+  change: function(files){
+    var affectedFiles, this$ = this;
+    affectedFiles = [];
+    files = Array.isArray(files)
+      ? files
+      : [files];
+    files.map(function(file){
+      var mtime;
+      if (!fs.existsSync(file)) {
+        return;
+      }
+      mtime = +fs.statSync(file).mtime;
+      if (this$.isSupported(file)) {
+        affectedFiles.push({
+          file: file,
           mtime: mtime
-        };
-      }));
-    }
-    return this.build(files);
+        });
+        this$.logDependencies(file);
+      }
+      if (this$.dependencies[file]) {
+        return affectedFiles = affectedFiles.concat(Array.from(this$.dependencies[file]).map(function(it){
+          return {
+            file: it,
+            mtime: mtime
+          };
+        }));
+      }
+    });
+    return this.build(affectedFiles);
   },
   init: function(){
     var recurse, this$ = this;

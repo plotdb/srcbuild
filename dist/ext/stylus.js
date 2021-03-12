@@ -18,7 +18,7 @@ stylusbuild = function(opt){
 stylusbuild.prototype = import$(Object.create(base.prototype), {
   getDependencies: function(file){
     var code, ret, root;
-    code = fs.readFileSync(file);
+    code = fs.readFileSync(file).toString();
     ret = code.split('\n').map(function(it){
       return /\s*(@import)\s+(.+)$/.exec(it);
     }).filter(function(it){

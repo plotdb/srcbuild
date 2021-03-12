@@ -21,4 +21,10 @@ watch.prototype = Object.create(Object.prototype) <<< do
   change: (file) -> @adapters.map -> it.change file
   unlink: (file) -> @adapters.map -> it.unlink file
 
+  /*change = (file) -> 
+    change-list.push file
+    change-debounced!
+  change-debounced = ~>
+    @adapters.map -> it.change change-list
+  */
 module.exports = watch
