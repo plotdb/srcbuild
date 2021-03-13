@@ -4,4 +4,4 @@ fs = require('fs');
 path = require('path');
 lib = path.dirname(fs.realpathSync(__filename));
 main = require(lib + "/main");
-main();
+main.lsp();

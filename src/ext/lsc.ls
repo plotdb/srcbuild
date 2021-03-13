@@ -1,4 +1,4 @@
-require! <[fs path fs-extra livescript uglify-js]>
+require! <[fs path fs-extra livescript uglify-js colors]>
 require! <[./base ../aux ../adapter]>
 
 
@@ -24,7 +24,7 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
         t2 = Date.now!
         @log.info "[BUILD] #src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "[BUILD] #src failed: "
-        @log.error e.message.toString!
+        @log.error "[BUILD] #src failed: ".red
+        @log.error e.message.toString!.red
 
 module.exports = lscbuild

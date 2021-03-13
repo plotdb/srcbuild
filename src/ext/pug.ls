@@ -1,5 +1,5 @@
-require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
-require! <[./base ../aux ../adapter]>
+require! <[fs path fs-extra pug livescript stylus js-yaml marked colors]>
+require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init

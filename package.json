@@ -26,6 +26,7 @@
   "dependencies": {
     "@loadingio/debounce.js": "0.0.1",
     "chokidar": "^3.5.1",
+    "colors": "^1.4.0",
     "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
     "livescript": "^1.6.0",
