@@ -14,6 +14,13 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
     root = path.resolve('.') + '/'
     return (ret or []).map ~> it.replace(root, '')
   is-supported: (file) -> /\.styl$/.exec(file) and file.startsWith(@srcdir)
+
+  resolve: (file) ->
+    re = new RegExp("^#{@desdir}/(.+?)(\.min)?\.css")
+    ret = re.exec(file)
+    if ret => return path.join(@srcdir, "#{ret.1}.styl")
+    return null
+
   map: (file) ->
     src: file
     des: file.replace(@srcdir, @desdir).replace(/\.styl$/, '.css')

@@ -10,7 +10,7 @@ pugbuild = (opt={}) ->
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
-  resolve: (fn,src,opt) ->
+  pug-resolve: (fn,src,opt) ->
     if !/^@/.exec(fn) => return path.resolve(path.join(path.dirname(src), fn))
     try
       if /^@\//.exec(fn) =>
@@ -23,7 +23,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   get-extapi: ->
     ret = do
-      plugins: [{resolve: (...args) ~> @resolve.apply @, args}]
+      plugins: [{resolve: (...args) ~> @pug-resolve.apply @, args}]
       filters: do
         'lsc': (text, opt) -> return livescript.compile(text,{bare:true,header:false})
         'lson': (text, opt) -> return livescript.compile(text,{bare:true,header:false,json:true})
@@ -66,6 +66,18 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   is-supported: (file) -> /\.pug$/.exec(file) and file.startsWith(@srcdir)
 
+  resolve: (file) ->
+    res = [
+      "^#{@desdir}/#{@intlbase}/[^/]+/(.+)\.html$"
+      "^#{@viewdir}/#{@intlbase}/[^/]+/(.+)\.js$"
+      "^#{@desdir}/(.+)\.html$"
+      "^#{@viewdir}/(.+)\.js$"
+    ].map -> new RegExp it
+    for re in res =>
+      ret = re.exec(file)
+      if ret => return path.join(@srcdir, "#{ret.1}.pug")
+    return null
+
   map: (file, intl) ->
     src: file
     desh: file.replace(@srcdir, path.join(@desdir, intl)).replace(/.pug$/, '.html')
@@ -106,7 +118,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
-      if i >= lngs.length => return
+      if i >= lngs.length => return Promise.resolve!
       _(lngs[i]).then -> consume(i + 1)
     consume!
 
@@ -126,7 +138,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
-      if i >= lngs.length => return
+      if i >= lngs.length => return Promise.resolve!
       _(lngs[i]).then -> consume(i + 1)
     consume!
 

@@ -22,6 +22,15 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
   isSupported: function(file){
     return /\.ls$/.exec(file) && file.startsWith(this.srcdir);
   },
+  resolve: function(file){
+    var re, ret;
+    re = new RegExp("^" + this.desdir + "/(.+?)(.min)?.js");
+    ret = re.exec(file);
+    if (ret) {
+      return path.join(this.srcdir, ret[1] + ".ls");
+    }
+    return null;
+  },
   map: function(file){
     return {
       src: file,

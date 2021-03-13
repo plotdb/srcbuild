@@ -8,7 +8,15 @@ main = require(lib + "/main");
 i18n({
   enabled: true
 }).then(function(i18n){
-  return main.lsp({
+  var ret;
+  return ret = main.lsp({
     i18n: i18n
   });
 });
+/*
+setTimeout (->
+  ret.demand 'web/.view/a.js'
+  ret.demand 'web/static/js/index.min.js'
+  ret.demand 'web/static/css/index.min.css'
+), 2000
+*/

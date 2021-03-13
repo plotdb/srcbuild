@@ -23,7 +23,7 @@ pugbuild = function(opt){
   return this;
 };
 pugbuild.prototype = import$(Object.create(base.prototype), {
-  resolve: function(fn, src, opt){
+  pugResolve: function(fn, src, opt){
     var des, e;
     if (!/^@/.exec(fn)) {
       return path.resolve(path.join(path.dirname(src), fn));
@@ -55,7 +55,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             res$.push(arguments[i$]);
           }
           args = res$;
-          return this$.resolve.apply(this$, args);
+          return this$.pugResolve.apply(this$, args);
         }
       }],
       filters: {
@@ -137,6 +137,20 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
   isSupported: function(file){
     return /\.pug$/.exec(file) && file.startsWith(this.srcdir);
   },
+  resolve: function(file){
+    var res, i$, len$, re, ret;
+    res = ["^" + this.desdir + "/" + this.intlbase + "/[^/]+/(.+).html$", "^" + this.viewdir + "/" + this.intlbase + "/[^/]+/(.+).js$", "^" + this.desdir + "/(.+).html$", "^" + this.viewdir + "/(.+).js$"].map(function(it){
+      return new RegExp(it);
+    });
+    for (i$ = 0, len$ = res.length; i$ < len$; ++i$) {
+      re = res[i$];
+      ret = re.exec(file);
+      if (ret) {
+        return path.join(this.srcdir, ret[1] + ".pug");
+      }
+    }
+    return null;
+  },
   map: function(file, intl){
     return {
       src: file,
@@ -204,7 +218,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     consume = function(i){
       i == null && (i = 0);
       if (i >= lngs.length) {
-        return;
+        return Promise.resolve();
       }
       return _(lngs[i]).then(function(){
         return consume(i + 1);
@@ -246,7 +260,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     consume = function(i){
       i == null && (i = 0);
       if (i >= lngs.length) {
-        return;
+        return Promise.resolve();
       }
       return _(lngs[i]).then(function(){
         return consume(i + 1);

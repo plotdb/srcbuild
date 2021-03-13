@@ -6,6 +6,11 @@ lscbuild = (opt={}) -> @init({srcdir: 'src/ls', desdir: 'static/js'} <<< opt)
 lscbuild.prototype = Object.create(base.prototype) <<< do
   get-dependencies: (file) -> return []
   is-supported: (file) -> /\.ls$/.exec(file) and file.startsWith(@srcdir)
+  resolve: (file) ->
+    re = new RegExp("^#{@desdir}/(.+?)(\.min)?\.js")
+    ret = re.exec(file)
+    if ret => return path.join(@srcdir, "#{ret.1}.ls")
+    return null
   map: (file) ->
     src: file
     des: file.replace(@srcdir, @desdir).replace(/\.ls$/, '.js')

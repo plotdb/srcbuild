@@ -26,6 +26,14 @@ watch.prototype = Object.create(Object.prototype) <<< do
       @buf.unlink = null
       @adapters.map -> it.unlink files
 
+  demand: (files) ->
+    files = (if Array.isArray(files) => files else [files])
+      .map (f) ~>
+        for adapter in @adapters => if adapter.resolve(f) => return that
+        return null
+      .filter -> it
+    Promise.all(@adapters.map -> it.change files, {force: true, non-recursive: true})
+
   add: (file) -> @adapters.map -> it.change file
   change: (file) ->
     if !@buf.change => @buf.change = new Set!

@@ -10,6 +10,7 @@ adapter = (opt={}) ->
   if opt.is-supported => @is-supported = that
   if opt.build => @build = that
   if opt.purge => @purge = that
+  if opt.resolve => @resolve = that
   @
 
 adapter.prototype = Object.create(Object.prototype) <<< do
@@ -17,6 +18,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
   is-supported: (file) -> return false
   purge: (files) -> # files: [{file, mtime}, ... ]
   build: (files) -> # files: [{file, mtime}, ... ]
+  resolve: (file) -> return null
   log-dependencies: (file) ->
     try
       list = (@get-dependencies(file) or []).map path.normalize
@@ -35,17 +37,19 @@ adapter.prototype = Object.create(Object.prototype) <<< do
       .map -> {file: it, mtime: 0}
     @purge ret
 
-  change: (files) ->
+  change: (files, opt = {}) ->
     affected-files = new Set!
     mtimes = {}
     queue = (if Array.isArray(files) => files else [files]).map(->it) # array clone
     ret = []
+    now = Date.now!
     while queue.length
       affected-files.add(file = queue.pop!)
       if !fs.exists-sync file => continue
       if @is-supported file => @log-dependencies file
-      mtime = fs.stat-sync(file).mtime
+      mtime = if opt.force => now else fs.stat-sync(file).mtime
       if !mtimes[file] or mtimes[file] < mtime => mtimes[file] = mtime
+      if opt.non-recursive => continue
       Array.from(@depends.on[file] or [])
         .map (f) ->
           if !mtimes[f] or mtimes[f] < mtimes[file] => mtimes[f] = mtimes[file]
@@ -53,7 +57,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     ret = Array.from(affected-files)
       .filter ~> @is-supported it
       .map ~> {file: it, mtime: mtimes[it]}
-    if ret.length => @build ret
+    Promise.resolve(if ret.length => @build ret else null)
 
   dirty-check: (files) ->
     mtimes = {}

@@ -36,6 +36,15 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
   isSupported: function(file){
     return /\.styl$/.exec(file) && file.startsWith(this.srcdir);
   },
+  resolve: function(file){
+    var re, ret;
+    re = new RegExp("^" + this.desdir + "/(.+?)(.min)?.css");
+    ret = re.exec(file);
+    if (ret) {
+      return path.join(this.srcdir, ret[1] + ".styl");
+    }
+    return null;
+  },
   map: function(file){
     return {
       src: file,

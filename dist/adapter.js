@@ -27,6 +27,9 @@ adapter = function(opt){
   if (that = opt.purge) {
     this.purge = that;
   }
+  if (that = opt.resolve) {
+    this.resolve = that;
+  }
   return this;
 };
 adapter.prototype = import$(Object.create(Object.prototype), {
@@ -38,6 +41,9 @@ adapter.prototype = import$(Object.create(Object.prototype), {
   },
   purge: function(files){},
   build: function(files){},
+  resolve: function(file){
+    return null;
+  },
   logDependencies: function(file){
     var list, e, setby, this$ = this;
     try {
@@ -73,8 +79,9 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     });
     return this.purge(ret);
   },
-  change: function(files){
-    var affectedFiles, mtimes, queue, ret, file, mtime, this$ = this;
+  change: function(files, opt){
+    var affectedFiles, mtimes, queue, ret, now, file, mtime, this$ = this;
+    opt == null && (opt = {});
     affectedFiles = new Set();
     mtimes = {};
     queue = (Array.isArray(files)
@@ -83,6 +90,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       return it;
     });
     ret = [];
+    now = Date.now();
     while (queue.length) {
       affectedFiles.add(file = queue.pop());
       if (!fs.existsSync(file)) {
@@ -91,9 +99,14 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       if (this.isSupported(file)) {
         this.logDependencies(file);
       }
-      mtime = fs.statSync(file).mtime;
+      mtime = opt.force
+        ? now
+        : fs.statSync(file).mtime;
       if (!mtimes[file] || mtimes[file] < mtime) {
         mtimes[file] = mtime;
+      }
+      if (opt.nonRecursive) {
+        continue;
       }
       Array.from(this.depends.on[file] || []).map(fn$);
     }
@@ -105,9 +118,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         mtime: mtimes[it]
       };
     });
-    if (ret.length) {
-      return this.build(ret);
-    }
+    return Promise.resolve(ret.length ? this.build(ret) : null);
     function fn$(f){
       if (!mtimes[f] || mtimes[f] < mtimes[file]) {
         mtimes[f] = mtimes[file];

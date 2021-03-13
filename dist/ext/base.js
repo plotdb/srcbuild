@@ -15,6 +15,7 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
   getDependencies: function(file){},
   build: function(files){},
   purge: function(files){},
+  resolve: function(file){},
   init: function(opt){
     var this$ = this;
     opt == null && (opt = {});
@@ -35,6 +36,9 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
       },
       purge: function(files){
         return this$.purge(files);
+      },
+      resolve: function(file){
+        return this$.resolve(file);
       }
     });
     this.adapter.init();

@@ -47,6 +47,8 @@ with following user-defined functions:
      - `mtime`: timestamp of the modified time of this file. may be modified time of its dependencies.
  - purge(files): should remove generated files corresponding to files listed in `files`.
    - `files`: same as `build`.
+ - resolve(file): return source file path for given target file `file`.
+   - return null if the given target file can't be derived from any supported source files.
 
 check `src/ext/lsc.ls` or `src/ext/pug.ls` for example. 
 
@@ -60,11 +62,24 @@ use `srcbuild.i18n` to quickly setup an `i18next` object:
 
     require! <[srcbuild]>
     srcbuild.i18n(options)
-      .then (i18n) -> srcbuild.lsc {i18n}
+      .then (i18n) -> srcbuild.lsp {i18n}
 
 `options` is passed to `i18next` init function. Additional fields in `options` used by `srcbuild.i18n`:
 
  - `enabled`: true if i18n is enabled. default false
+
+
+## on demand build
+
+use `watch.demand(target-file)` to force rebuild by request. e.g., 
+
+    require! <[srcbuild]>
+    watch = srcbuild.lsp!
+
+    # this triggers rebuilding of `web/src/pug/index.pug` file.
+    watch.demand('web/static/index.html').then -> console.log "built."
+
+`target` to `source` file mapping is done by `resolve` function in custom builder, so to use on demand build, `resolve` must be implemented.
 
 
 ## License

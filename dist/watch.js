@@ -55,6 +55,29 @@ watch.prototype = import$(Object.create(Object.prototype), {
       });
     });
   },
+  demand: function(files){
+    var this$ = this;
+    files = (Array.isArray(files)
+      ? files
+      : [files]).map(function(f){
+      var i$, ref$, len$, adapter, that;
+      for (i$ = 0, len$ = (ref$ = this$.adapters).length; i$ < len$; ++i$) {
+        adapter = ref$[i$];
+        if (that = adapter.resolve(f)) {
+          return that;
+        }
+      }
+      return null;
+    }).filter(function(it){
+      return it;
+    });
+    return Promise.all(this.adapters.map(function(it){
+      return it.change(files, {
+        force: true,
+        nonRecursive: true
+      });
+    }));
+  },
   add: function(file){
     return this.adapters.map(function(it){
       return it.change(file);
