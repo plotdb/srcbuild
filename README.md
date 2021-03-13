@@ -19,6 +19,7 @@ where
      require! <[@plotdb/srcbuild pino]>
      srcbuild.lsp({pino({level: 'debug'})})
 
+Options in `srcbuild.lsp` will in turn be passed to custom builders ( `lsc`, `stylus` and `pug` ). See following sections for additional options in custom builders.
 
 
 ## Custom Adapter
@@ -48,6 +49,12 @@ with following user-defined functions:
    - `files`: same as `build`.
 
 check `src/ext/lsc.ls` or `src/ext/pug.ls` for example. 
+
+
+## options for custom builder
+
+ - `i18n`: `i18n-next` style i18n object.
+ - `intlbase`: base dir of i18n files. default `intl`.
 
 
 ## License

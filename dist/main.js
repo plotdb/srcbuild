@@ -13,13 +13,13 @@ module.exports = {
     opt == null && (opt = {});
     base = opt.base || 'web';
     adapters = [
-      new lsc({
+      new lsc(import$({
         base: base
-      }), new stylus({
+      }, opt)), new stylus(import$({
         base: base
-      }), new pug({
+      }, opt)), new pug(import$({
         base: base
-      })
+      }, opt))
     ].map(function(it){
       return it.getAdapter();
     });

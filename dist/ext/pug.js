@@ -12,13 +12,13 @@ base = require('./base');
 aux = require('../aux');
 pugbuild = function(opt){
   opt == null && (opt = {});
+  this.i18n = opt.i18n || null;
+  this.intlbase = opt.intlbase || 'intl';
   this.extapi = this.getExtapi();
   this.init(import$({
     srcdir: 'src/pug',
     desdir: 'static'
   }, opt));
-  this.i18n = opt.i18n || null;
-  this.intlbase = opt.intlbase || 'intl';
   this.viewdir = path.normalize(path.join(this.base, opt.viewdir || '.view'));
   return this;
 };
@@ -45,8 +45,8 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     }
   },
   getExtapi: function(){
-    var this$ = this;
-    return {
+    var ret, this$ = this;
+    ret = {
       plugins: [{
         resolve: function(){
           var args, res$, i$, to$;
@@ -104,6 +104,23 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         return ret;
       }
     };
+    if (this.i18n) {
+      ret.i18n = function(it){
+        return this$.i18n.t((it || '').trim());
+      };
+      ret.intlbase = function(p){
+        p == null && (p = "");
+        if (this$.i18n.language) {
+          return path.join(this$.intlbase, opt.i18n.language, p);
+        } else {
+          return p;
+        }
+      };
+      (ret.filters || (ret.filters = {})).i18n = function(t, o){
+        return this.i18n.t((t || '').trim());
+      };
+    }
+    return ret;
   },
   getDependencies: function(file){
     var code, ret, root;

@@ -2,10 +2,10 @@ require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
 require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->
-  @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
-  @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
+  @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
+  @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @
 
@@ -22,7 +22,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       throw new Error("no such file or directory: #fn")
 
   get-extapi: ->
-    do
+    ret = do
       plugins: [{resolve: (...args) ~> @resolve.apply @, args}]
       filters: do
         'lsc': (text, opt) -> return livescript.compile(text,{bare:true,header:false})
@@ -47,6 +47,13 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             catch e
               @log.error "[ERROR@#it]: ", e
         return ret
+
+    if @i18n =>
+      ret.i18n = ~> @i18n.t((it or '').trim!)
+      ret.intlbase = (p = "") ~> if @i18n.language => path.join(@intlbase, opt.i18n.language,p) else p
+      ret.{}filters.i18n = (t, o) -> @i18n.t((t or '').trim!)
+
+    return ret
 
   get-dependencies: (file) ->
     code = fs.read-file-sync file

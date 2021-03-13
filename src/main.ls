@@ -5,8 +5,8 @@ module.exports = do
   lsp: (opt = {}) ->
     base = opt.base or 'web'
     adapters = [
-      new lsc {base}
-      new stylus {base}
-      new pug {base}
+      new lsc({base} <<< opt)
+      new stylus({base} <<< opt)
+      new pug({base} <<< opt)
     ].map -> it.get-adapter!
-    watcher = new watch {adapters} <<< opt
+    watcher = new watch({adapters} <<< opt)
