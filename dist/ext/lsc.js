@@ -72,7 +72,7 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         return;
       }
       fs.unlinkSync(f);
-      return this$.log.warn(src + " --> " + f + " deleted.");
+      return this$.log.warn("purge: " + src + " --> " + f + " deleted.");
     }
   }
 });

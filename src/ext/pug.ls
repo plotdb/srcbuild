@@ -122,7 +122,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           [desh,desv].filter (f) ~>
             if !fs.exists-sync f => return
             fs.unlink-sync f
-            @log.warn "#src --> #f deleted."
+            @log.warn "purge: #src --> #f deleted."
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->

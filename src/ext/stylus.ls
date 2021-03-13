@@ -46,6 +46,6 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
       [des,des-min].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
-        @log.warn "#src --> #f deleted."
+        @log.warn "purge: #src --> #f deleted."
 
 module.exports = stylusbuild
