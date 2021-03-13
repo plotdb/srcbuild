@@ -1,4 +1,4 @@
-require! <[fs path fs-extra livescript uglify-js colors]>
+require! <[fs path fs-extra livescript uglify-js]>
 require! <[./base ../aux ../adapter]>
 
 
@@ -6,11 +6,13 @@ lscbuild = (opt={}) -> @init({srcdir: 'src/ls', desdir: 'static/js'} <<< opt)
 lscbuild.prototype = Object.create(base.prototype) <<< do
   get-dependencies: (file) -> return []
   is-supported: (file) -> /\.ls$/.exec(file) and file.startsWith(@srcdir)
+  map: (file) ->
+    src: file
+    des: file.replace(@srcdir, @desdir).replace(/\.ls$/, '.js')
+    des-min: file.replace(@srcdir, @desdir).replace(/\.ls$/, '.min.js')
   build: (files) ->
     for {file, mtime} in files =>
-      src = file
-      des = src.replace(@srcdir, @desdir).replace(/\.ls$/, '.js')
-      des-min = src.replace(@srcdir, @desdir).replace(/\.ls$/, '.min.js')
+      {src, des, des-min} = @map(file)
       if !fs.exists-sync(src) or aux.newer(des, mtime) => continue
       try
         t1 = Date.now!
@@ -22,9 +24,16 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
         fs.write-file-sync des, code
         fs.write-file-sync des-min, code-min
         t2 = Date.now!
-        @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
+        @log.info "build: #src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "build #src failed: ".red
-        @log.error e.message.toString!.red
+        @log.error "build #src failed: "
+        @log.error e.message.toString!
+  unlink: (files) ->
+    for {file, mtime} in files =>
+      {src,des,des-min} = @map(file)
+      [des,des-min].filter (f) ->
+        if !fs.exists-sync f => return
+        fs.unlink-sync f
+        @log.warn "#src --> #f deleted."
 
 module.exports = lscbuild

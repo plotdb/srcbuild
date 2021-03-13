@@ -11,7 +11,10 @@ adapter = function(opt){
   this.opt = opt;
   this.base = opt.base || '.';
   this.log = opt.logger || aux.logger;
-  this.dependencies = {};
+  this.depends = {
+    on: {},
+    by: {}
+  };
   if (that = opt.getDependencies) {
     this.getDependencies = that;
   }
@@ -20,6 +23,9 @@ adapter = function(opt){
   }
   if (that = opt.build) {
     this.build = that;
+  }
+  if (that = opt.unlink) {
+    this.unlink = that;
   }
   return this;
 };
@@ -33,53 +39,95 @@ adapter.prototype = import$(Object.create(Object.prototype), {
   unlink: function(){},
   build: function(files){},
   logDependencies: function(file){
-    var list, e, this$ = this;
+    var list, e, setby, this$ = this;
     try {
       list = (this.getDependencies(file) || []).map(path.normalize);
     } catch (e$) {
       e = e$;
       list = [];
     }
+    Array.from(this.depends.by[file] || []).map(function(f){
+      if (this$.depends.on[f]) {
+        return this$.depends.on[f]['delete'](file);
+      }
+    });
+    setby = this.depends.by[file] = new Set();
     return list.map(function(f){
-      var set, that;
-      set = (that = this$.dependencies[f])
+      var seton, that;
+      seton = (that = this$.depends.on[f])
         ? that
-        : this$.dependencies[f] = new Set();
-      return set.add(file);
+        : this$.depends.on[f] = new Set();
+      seton.add(file);
+      return setby.add(f);
     });
   },
   change: function(files){
-    var affectedFiles, this$ = this;
-    affectedFiles = [];
-    files = Array.isArray(files)
+    var affectedFiles, mtimes, queue, ret, file, mtime, this$ = this;
+    affectedFiles = new Set();
+    mtimes = {};
+    queue = (Array.isArray(files)
       ? files
-      : [files];
-    files.map(function(file){
-      var mtime;
-      if (!fs.existsSync(file)) {
-        return;
-      }
-      mtime = +fs.statSync(file).mtime;
-      if (this$.isSupported(file)) {
-        affectedFiles.push({
-          file: file,
-          mtime: mtime
-        });
-        this$.logDependencies(file);
-      }
-      if (this$.dependencies[file]) {
-        return affectedFiles = affectedFiles.concat(Array.from(this$.dependencies[file]).map(function(it){
-          return {
-            file: it,
-            mtime: mtime
-          };
-        }));
-      }
+      : [files]).map(function(it){
+      return it;
     });
-    return this.build(affectedFiles);
+    ret = [];
+    while (queue.length) {
+      affectedFiles.add(file = queue.pop());
+      if (!fs.existsSync(file)) {
+        continue;
+      }
+      if (this.isSupported(file)) {
+        this.logDependencies(file);
+      }
+      mtime = fs.statSync(file).mtime;
+      if (!mtimes[file] || mtimes[file] < mtime) {
+        mtimes[file] = mtime;
+      }
+      Array.from(this.depends.on[file] || []).map(fn$);
+    }
+    ret = Array.from(affectedFiles).filter(function(it){
+      return this$.isSupported(it);
+    }).map(function(it){
+      return {
+        file: it,
+        mtime: mtimes[it]
+      };
+    });
+    if (ret.length) {
+      return this.build(ret);
+    }
+    function fn$(f){
+      if (!mtimes[f] || mtimes[f] < mtimes[file]) {
+        mtimes[f] = mtimes[file];
+      }
+      return queue.push(f);
+    }
+  },
+  dirtyCheck: function(files){
+    var mtimes, recurse, this$ = this;
+    mtimes = {};
+    recurse = function(file){
+      var that;
+      if (that = mtimes[file]) {
+        return that;
+      }
+      if (!fs.existsSync(file)) {
+        return 0;
+      }
+      return mtimes[file] = Math.max.apply(Math, [+fs.statSync(file).mtime].concat(Array.from(this$.depends.by[file] || []).map(function(f){
+        return recurse(f);
+      })));
+    };
+    return this.build(files.map(function(file){
+      return {
+        file: file,
+        mtime: recurse(file)
+      };
+    }));
   },
   init: function(){
-    var recurse, this$ = this;
+    var initBuilds, recurse, this$ = this;
+    initBuilds = [];
     recurse = function(root){
       var files, i$, len$, file, results$ = [];
       if (!fs.existsSync(root)) {
@@ -93,13 +141,16 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         if (fs.statSync(file).isDirectory()) {
           recurse(file);
         }
-        if (this$.isSupported(file)) {
-          results$.push(this$.logDependencies(file));
+        if (!this$.isSupported(file)) {
+          continue;
         }
+        this$.logDependencies(file);
+        results$.push(initBuilds.push(file));
       }
       return results$;
     };
-    return recurse(this.base);
+    recurse(this.base);
+    return this.dirtyCheck(initBuilds);
   }
 });
 module.exports = adapter;

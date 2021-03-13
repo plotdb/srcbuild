@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript stylus js-yaml marked colors]>
+require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
 require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->
@@ -59,6 +59,11 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   is-supported: (file) -> /\.pug$/.exec(file) and file.startsWith(@srcdir)
 
+  map: (file) ->
+    src: file
+    desh: file.replace(@srcdir, @desdir).replace(/.pug$/, '.html')
+    desv: file.replace(@srcdir, @viewdir).replace(/.pug/, '.js')
+
   build: (files) ->
     _ = (lng = '') ~>
       intl = if lng => path.join(@intlbase,lng) else ''
@@ -67,9 +72,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       else Promise.resolve!
       p.then ~>
         for {file, mtime} in files =>
-          src = file
-          desh = src.replace(@srcdir, @desdir).replace(/.pug$/, '.html')
-          desv = desh.replace(@desdir, @viewdir).replace(/.html$/, '.js')
+          {src, desh, desv} = @map file
           if !fs.exists-sync(src) or aux.newer(desv, mtime) => continue
           code = fs.read-file-sync src .toString!
           try
@@ -81,7 +84,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             ret = """ (function() { #ret; module.exports = template; })() """
             fs.write-file-sync desv, ret
             t2 = Date.now!
-            @log.info "#src --> #desv ( #{t2 - t1}ms )"
+            @log.info "build: #src --> #desv ( #{t2 - t1}ms )"
             if !(/^\/\/- ?view ?/.exec(code)) =>
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
@@ -89,10 +92,10 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
                 desh, pug.render code, {filename: src, basedir: @srcdir} <<< @extapi
               )
               t2 = Date.now!
-              @log.info "#src --> #desh ( #{t2 - t1}ms )"
+              @log.info "build: #src --> #desh ( #{t2 - t1}ms )"
           catch
-            @log.error "build #src failed: ".red
-            @log.error e.message.toString!red
+            @log.error "build #src failed: "
+            @log.error e.message.toString!
 
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
@@ -100,5 +103,13 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       if i >= lngs.length => return
       _(lngs[i]).then -> consume(i + 1)
     consume!
+  unlink: (files) ->
+    for {file,mtime} in files =>
+      {src,desh,desv} = @map file
+      [desh,desv].filter (f) ->
+        if !fs.exists-sync f => return
+        fs.unlink-sync f
+        @log.warn "#src --> #f deleted."
+
 
 module.exports = pugbuild

@@ -1,4 +1,4 @@
-require! <[fs path fs-extra chokidar colors @loadingio/debounce.js ./aux]>
+require! <[fs path fs-extra chokidar @loadingio/debounce.js ./aux]>
 
 watch = (opt={}) ->
   @opt = opt
@@ -16,7 +16,7 @@ watch.prototype = Object.create(Object.prototype) <<< do
       .on \add, (~> @add path.normalize it)
       .on \change, (~> @change path.normalize it)
       .on \unlink, (~> @unlink path.normalize it)
-    @log.info "watching src for file change".cyan
+    @log.info "watching src for file change"
     @change-debounced = debounce ~> 
       files = Array.from(@buf.change)
       @buf.change = null
