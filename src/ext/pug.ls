@@ -103,10 +103,10 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       if i >= lngs.length => return
       _(lngs[i]).then -> consume(i + 1)
     consume!
-  unlink: (files) ->
+  purge: (files) ->
     for {file,mtime} in files =>
       {src,desh,desv} = @map file
-      [desh,desv].filter (f) ->
+      [desh,desv].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
         @log.warn "#src --> #f deleted."

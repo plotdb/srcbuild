@@ -195,8 +195,8 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     };
     return consume();
   },
-  unlink: function(files){
-    var i$, len$, ref$, file, mtime, src, desh, desv, results$ = [];
+  purge: function(files){
+    var i$, len$, ref$, file, mtime, src, desh, desv, results$ = [], this$ = this;
     for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
       ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
       ref$ = this.map(file), src = ref$.src, desh = ref$.desh, desv = ref$.desv;
@@ -208,7 +208,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         return;
       }
       fs.unlinkSync(f);
-      return this.log.warn(src + " --> " + f + " deleted.");
+      return this$.log.warn(src + " --> " + f + " deleted.");
     }
   }
 });

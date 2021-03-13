@@ -23,8 +23,13 @@ module.exports = {
     ].map(function(it){
       return it.getAdapter();
     });
-    return watcher = new watch({
+    return watcher = new watch(import$({
       adapters: adapters
-    });
+    }, opt));
   }
 };
+function import$(obj, src){
+  var own = {}.hasOwnProperty;
+  for (var key in src) if (own.call(src, key)) obj[key] = src[key];
+  return obj;
+}

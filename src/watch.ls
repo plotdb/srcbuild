@@ -21,12 +21,19 @@ watch.prototype = Object.create(Object.prototype) <<< do
       files = Array.from(@buf.change)
       @buf.change = null
       @adapters.map -> it.change files
+    @unlink-debounced = debounce ~>
+      files = Array.from(@buf.unlink)
+      @buf.unlink = null
+      @adapters.map -> it.unlink files
 
   add: (file) -> @adapters.map -> it.change file
-  unlink: (file) -> @adapters.map -> it.unlink file
   change: (file) ->
     if !@buf.change => @buf.change = new Set!
     @buf.change.add file
     @change-debounced!
+  unlink: (file) ->
+    if !@buf.unlink => @buf.unlink = new Set!
+    @buf.unlink.add file
+    @unlink-debounced!
 
 module.exports = watch

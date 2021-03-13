@@ -40,10 +40,10 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
       catch
         @log.error "build #src failed: "
         @log.error e.message.toString!
-  unlink: (files) ->
+  purge: (files) ->
     for {file, mtime} in files =>
       {src,des,des-min} = @map(file)
-      [des,des-min].filter (f) ->
+      [des,des-min].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
         @log.warn "#src --> #f deleted."

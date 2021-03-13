@@ -9,15 +9,14 @@ adapter = (opt={}) ->
   if opt.get-dependencies => @get-dependencies = that
   if opt.is-supported => @is-supported = that
   if opt.build => @build = that
-  if opt.unlink => @unlink = that
+  if opt.purge => @purge = that
   @
 
 adapter.prototype = Object.create(Object.prototype) <<< do
   get-dependencies: -> []
   is-supported: (file) -> return false
-  unlink: ->
-  # files: [{file, mtime}, ... ]
-  build: (files) ->
+  purge: (files) -> # files: [{file, mtime}, ... ]
+  build: (files) -> # files: [{file, mtime}, ... ]
   log-dependencies: (file) ->
     try
       list = (@get-dependencies(file) or []).map path.normalize
@@ -29,6 +28,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
       seton = if @depends.on[f] => that else (@depends.on[f] = new Set!)
       seton.add file
       setby.add f
+  unlink: (files) -> @purge files.map(-> {file: it, mtime: 0})
   change: (files) ->
     affected-files = new Set!
     mtimes = {}

@@ -10,6 +10,7 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
   is-supported: (file) ->
   get-dependencies: (file) ->
   build: (files) ->
+  purge: (files) ->
 
   init: (opt={}) ->
     @log = opt.logger or aux.logger
@@ -21,6 +22,7 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
       get-dependencies: ~> @get-dependencies it
       is-supported: ~> @is-supported it
       build: (files) ~> @build files
+      purge: (files) ~> @purge files
     @adapter.init!
     @
   get-adapter: -> @adapter

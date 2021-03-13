@@ -38,12 +38,20 @@ watch.prototype = import$(Object.create(Object.prototype), {
       return this$.unlink(path.normalize(it));
     });
     this.log.info("watching src for file change");
-    return this.changeDebounced = debounce(function(){
+    this.changeDebounced = debounce(function(){
       var files;
       files = Array.from(this$.buf.change);
       this$.buf.change = null;
       return this$.adapters.map(function(it){
         return it.change(files);
+      });
+    });
+    return this.unlinkDebounced = debounce(function(){
+      var files;
+      files = Array.from(this$.buf.unlink);
+      this$.buf.unlink = null;
+      return this$.adapters.map(function(it){
+        return it.unlink(files);
       });
     });
   },
@@ -52,17 +60,19 @@ watch.prototype = import$(Object.create(Object.prototype), {
       return it.change(file);
     });
   },
-  unlink: function(file){
-    return this.adapters.map(function(it){
-      return it.unlink(file);
-    });
-  },
   change: function(file){
     if (!this.buf.change) {
       this.buf.change = new Set();
     }
     this.buf.change.add(file);
     return this.changeDebounced();
+  },
+  unlink: function(file){
+    if (!this.buf.unlink) {
+      this.buf.unlink = new Set();
+    }
+    this.buf.unlink.add(file);
+    return this.unlinkDebounced();
   }
 });
 module.exports = watch;

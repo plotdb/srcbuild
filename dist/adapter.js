@@ -24,8 +24,8 @@ adapter = function(opt){
   if (that = opt.build) {
     this.build = that;
   }
-  if (that = opt.unlink) {
-    this.unlink = that;
+  if (that = opt.purge) {
+    this.purge = that;
   }
   return this;
 };
@@ -36,7 +36,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
   isSupported: function(file){
     return false;
   },
-  unlink: function(){},
+  purge: function(files){},
   build: function(files){},
   logDependencies: function(file){
     var list, e, setby, this$ = this;
@@ -60,6 +60,14 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       seton.add(file);
       return setby.add(f);
     });
+  },
+  unlink: function(files){
+    return this.purge(files.map(function(it){
+      return {
+        file: it,
+        mtime: 0
+      };
+    }));
   },
   change: function(files){
     var affectedFiles, mtimes, queue, ret, file, mtime, this$ = this;

@@ -1,6 +1,6 @@
 # srcbuild
 
-building source files.
+Source file tree builder.
 
 
 ## Usage
@@ -8,7 +8,16 @@ building source files.
 setup a lsp watcher:
 
     require! <[@plotdb/srcbuild]>
-    srcbuild.lsp {base: 'web'}
+    srcbuild.lsp {base: 'web', logger: ...}
+
+where
+
+ - `base`: root dir for `src` and `static` folders. default `.`
+ - `logger`: optional. for logging output. use `console.log` by default. 
+   - sample logger with `pino`:
+
+     require! <[@plotdb/srcbuild pino]>
+     srcbuild.lsp({pino({level: 'debug'})})
 
 
 
@@ -35,7 +44,7 @@ with following user-defined functions:
    - `files`: a list of objects corresponding to files to be compiled, with following fields:
      - `file`: path of the file to be built, relative to cwd.
      - `mtime`: timestamp of the modified time of this file. may be modified time of its dependencies.
- - unlink(files): should remove generated files corresponding to files listed in `files`.
+ - purge(files): should remove generated files corresponding to files listed in `files`.
    - `files`: same as `build`.
 
 check `src/ext/lsc.ls` or `src/ext/pug.ls` for example. 

@@ -9,4 +9,4 @@ module.exports = do
       new stylus {base}
       new pug {base}
     ].map -> it.get-adapter!
-    watcher = new watch {adapters}
+    watcher = new watch {adapters} <<< opt

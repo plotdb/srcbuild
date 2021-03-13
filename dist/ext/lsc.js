@@ -59,8 +59,8 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
     }
     return results$;
   },
-  unlink: function(files){
-    var i$, len$, ref$, file, mtime, src, des, desMin, results$ = [];
+  purge: function(files){
+    var i$, len$, ref$, file, mtime, src, des, desMin, results$ = [], this$ = this;
     for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
       ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
       ref$ = this.map(file), src = ref$.src, des = ref$.des, desMin = ref$.desMin;
@@ -72,7 +72,7 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         return;
       }
       fs.unlinkSync(f);
-      return this.log.warn(src + " --> " + f + " deleted.");
+      return this$.log.warn(src + " --> " + f + " deleted.");
     }
   }
 });
