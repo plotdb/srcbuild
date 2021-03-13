@@ -56,6 +56,16 @@ check `src/ext/lsc.ls` or `src/ext/pug.ls` for example.
  - `i18n`: `i18n-next` style i18n object.
  - `intlbase`: base dir of i18n files. default `intl`.
 
+use `srcbuild.i18n` to quickly setup an `i18next` object:
+
+    require! <[srcbuild]>
+    srcbuild.i18n(options)
+      .then (i18n) -> srcbuild.lsc {i18n}
+
+`options` is passed to `i18next` init function. Additional fields in `options` used by `srcbuild.i18n`:
+
+ - `enabled`: true if i18n is enabled. default false
+
 
 ## License
 

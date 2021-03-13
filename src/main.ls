@@ -1,7 +1,8 @@
-require! <[fs ./watch ./ext/pug ./ext/stylus ./ext/lsc ./ext/base]>
+require! <[fs ./i18n ./watch ./ext/pug ./ext/stylus ./ext/lsc ./ext/base]>
 
 module.exports = do
   base: base
+  i18n: i18n
   lsp: (opt = {}) ->
     base = opt.base or 'web'
     adapters = [

@@ -137,11 +137,11 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
   isSupported: function(file){
     return /\.pug$/.exec(file) && file.startsWith(this.srcdir);
   },
-  map: function(file){
+  map: function(file, intl){
     return {
       src: file,
-      desh: file.replace(this.srcdir, this.desdir).replace(/.pug$/, '.html'),
-      desv: file.replace(this.srcdir, this.viewdir).replace(/.pug/, '.js')
+      desh: file.replace(this.srcdir, path.join(this.desdir, intl)).replace(/.pug$/, '.html'),
+      desv: file.replace(this.srcdir, path.join(this.viewdir, intl)).replace(/.pug/, '.js')
     };
   },
   build: function(files){
@@ -159,7 +159,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, code, t1, desvdir, ret, t2, desdir, e, results$ = [];
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
-          ref1$ = this$.map(file), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
+          ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
           if (!fs.existsSync(src) || aux.newer(desv, mtime)) {
             continue;
           }

@@ -66,10 +66,10 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   is-supported: (file) -> /\.pug$/.exec(file) and file.startsWith(@srcdir)
 
-  map: (file) ->
+  map: (file, intl) ->
     src: file
-    desh: file.replace(@srcdir, @desdir).replace(/.pug$/, '.html')
-    desv: file.replace(@srcdir, @viewdir).replace(/.pug/, '.js')
+    desh: file.replace(@srcdir, path.join(@desdir, intl)).replace(/.pug$/, '.html')
+    desv: file.replace(@srcdir, path.join(@viewdir, intl)).replace(/.pug/, '.js')
 
   build: (files) ->
     _ = (lng = '') ~>
@@ -79,7 +79,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       else Promise.resolve!
       p.then ~>
         for {file, mtime} in files =>
-          {src, desh, desv} = @map file
+          {src, desh, desv} = @map file, intl
           if !fs.exists-sync(src) or aux.newer(desv, mtime) => continue
           code = fs.read-file-sync src .toString!
           try
@@ -103,7 +103,6 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           catch
             @log.error "build #src failed: "
             @log.error e.message.toString!
-
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
