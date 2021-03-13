@@ -157,7 +157,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             ret = " (function() { " + ret + "; module.exports = template; })() ";
             fs.writeFileSync(desv, ret);
             t2 = Date.now();
-            this$.log.info("[BUILD] " + src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
+            this$.log.info(src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
             if (!/^\/\/- ?view ?/.exec(code)) {
               desdir = path.dirname(desh);
               fsExtra.ensureDirSync(desdir);
@@ -166,11 +166,11 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
                 basedir: this$.srcdir
               }, this$.extapi)));
               t2 = Date.now();
-              results$.push(this$.log.info("[BUILD] " + src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));
+              results$.push(this$.log.info(src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));
             }
           } catch (e$) {
             e = e$;
-            this$.log.error(("[BUILD] " + src + " failed: ").red);
+            this$.log.error(("build " + src + " failed: ").red);
             results$.push(this$.log.error(e.message.toString().red));
           }
         }

@@ -46,10 +46,10 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         fs.writeFileSync(des, code);
         fs.writeFileSync(desMin, codeMin);
         t2 = Date.now();
-        results$.push(this.log.info("[BUILD] " + src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )"));
+        results$.push(this.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )"));
       } catch (e$) {
         e = e$;
-        this.log.error(("[BUILD] " + src + " failed: ").red);
+        this.log.error(("build " + src + " failed: ").red);
         results$.push(this.log.error(e.message.toString().red));
       }
     }

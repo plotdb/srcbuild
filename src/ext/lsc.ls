@@ -22,9 +22,9 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
         fs.write-file-sync des, code
         fs.write-file-sync des-min, code-min
         t2 = Date.now!
-        @log.info "[BUILD] #src --> #des / #des-min ( #{t2 - t1}ms )"
+        @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "[BUILD] #src failed: ".red
+        @log.error "build #src failed: ".red
         @log.error e.message.toString!.red
 
 module.exports = lscbuild
