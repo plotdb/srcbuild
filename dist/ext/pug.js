@@ -213,20 +213,46 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     return consume();
   },
   purge: function(files){
-    var i$, len$, ref$, file, mtime, src, desh, desv, results$ = [], this$ = this;
-    for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
-      ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
-      ref$ = this.map(file), src = ref$.src, desh = ref$.desh, desv = ref$.desv;
-      results$.push([desh, desv].filter(fn$));
-    }
-    return results$;
-    function fn$(f){
-      if (!fs.existsSync(f)) {
+    var _, lngs, ref$, consume, this$ = this;
+    _ = function(lng){
+      var intl, p, that, ref$;
+      lng == null && (lng = '');
+      intl = lng ? path.join(this$.intlbase, lng) : '';
+      p = this$.i18n && this$.i18n.changeLanguage
+        ? this$.i18n.changeLanguage((that = lng)
+          ? that
+          : ((ref$ = this$.i18n).options || (ref$.options = {})).fallbackLng)
+        : Promise.resolve();
+      return p.then(function(){
+        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, results$ = [];
+        for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
+          ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
+          ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
+          results$.push([desh, desv].filter(fn$));
+        }
+        return results$;
+        function fn$(f){
+          if (!fs.existsSync(f)) {
+            return;
+          }
+          fs.unlinkSync(f);
+          return this$.log.warn(src + " --> " + f + " deleted.");
+        }
+      });
+    };
+    lngs = [''].concat(this.i18n
+      ? ((ref$ = this.i18n).options || (ref$.options = {})).lng || []
+      : []);
+    consume = function(i){
+      i == null && (i = 0);
+      if (i >= lngs.length) {
         return;
       }
-      fs.unlinkSync(f);
-      return this$.log.warn(src + " --> " + f + " deleted.");
-    }
+      return _(lngs[i]).then(function(){
+        return consume(i + 1);
+      });
+    };
+    return consume();
   }
 });
 module.exports = pugbuild;

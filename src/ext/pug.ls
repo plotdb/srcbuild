@@ -109,13 +109,26 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       if i >= lngs.length => return
       _(lngs[i]).then -> consume(i + 1)
     consume!
+
   purge: (files) ->
-    for {file,mtime} in files =>
-      {src,desh,desv} = @map file
-      [desh,desv].filter (f) ~>
-        if !fs.exists-sync f => return
-        fs.unlink-sync f
-        @log.warn "#src --> #f deleted."
+    _ = (lng = '') ~>
+      intl = if lng => path.join(@intlbase,lng) else ''
+      p = if @i18n and @i18n.changeLanguage =>
+        @i18n.changeLanguage(if lng => that else @i18n.{}options.fallbackLng)
+      else Promise.resolve!
+      p.then ~>
+        for {file,mtime} in files =>
+          {src,desh,desv} = @map file, intl
+          [desh,desv].filter (f) ~>
+            if !fs.exists-sync f => return
+            fs.unlink-sync f
+            @log.warn "#src --> #f deleted."
+
+    lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
+    consume = (i = 0) ->
+      if i >= lngs.length => return
+      _(lngs[i]).then -> consume(i + 1)
+    consume!
 
 
 module.exports = pugbuild

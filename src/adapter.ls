@@ -28,7 +28,13 @@ adapter.prototype = Object.create(Object.prototype) <<< do
       seton = if @depends.on[f] => that else (@depends.on[f] = new Set!)
       seton.add file
       setby.add f
-  unlink: (files) -> @purge files.map(-> {file: it, mtime: 0})
+
+  unlink: (files) ->
+    ret = files
+      .filter ~> @is-supported it
+      .map -> {file: it, mtime: 0}
+    @purge ret
+
   change: (files) ->
     affected-files = new Set!
     mtimes = {}

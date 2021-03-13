@@ -62,12 +62,16 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     });
   },
   unlink: function(files){
-    return this.purge(files.map(function(it){
+    var ret, this$ = this;
+    ret = files.filter(function(it){
+      return this$.isSupported(it);
+    }).map(function(it){
       return {
         file: it,
         mtime: 0
       };
-    }));
+    });
+    return this.purge(ret);
   },
   change: function(files){
     var affectedFiles, mtimes, queue, ret, file, mtime, this$ = this;
