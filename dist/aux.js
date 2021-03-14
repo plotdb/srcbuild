@@ -35,7 +35,7 @@ aux = {
   }
 };
 aux.logger = log = {};
-[['info', 'cyan'], ['warn', 'yellow'], ['error', 'red']].map(function(n){
+[['info', 'green'], ['warn', 'yellow'], ['error', 'red']].map(function(n){
   return log[n[0]] = function(){
     var args, res$, i$, to$;
     res$ = [];
@@ -43,7 +43,7 @@ aux.logger = log = {};
       res$.push(arguments[i$]);
     }
     args = res$;
-    args = ["[BUILD] " + n[0].toUpperCase()[n[1]]].concat(args);
+    args = [n[0].toUpperCase()[n[1]] + "\t: [build]"].concat(args);
     return console[n[0]].apply(console, args);
   };
 });

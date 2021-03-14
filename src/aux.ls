@@ -18,9 +18,9 @@ aux = do
       .length
 
 aux.logger = log = {}
-[<[info cyan]> <[warn yellow]> <[error red]>].map (n) ->
+[<[info green]> <[warn yellow]> <[error red]>].map (n) ->
   log[n.0] = (...args) ->
-    args = ( ["[BUILD] #{n.0.toUpperCase![n.1]}"] ++ args)
+    args = ( ["#{n.0.toUpperCase![n.1]}\t: [build]"] ++ args)
     console[n.0].apply console, args
 
 module.exports = aux
