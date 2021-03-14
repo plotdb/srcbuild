@@ -16,7 +16,7 @@ watch.prototype = Object.create(Object.prototype) <<< do
       .on \add, (~> @add path.normalize it)
       .on \change, (~> @change path.normalize it)
       .on \unlink, (~> @unlink path.normalize it)
-    @log.info "watching src for file change".green
+    @log.info "watching src for file change".cyan
     @change-debounced = debounce ~> 
       files = Array.from(@buf.change)
       @buf.change = null

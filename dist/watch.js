@@ -38,7 +38,7 @@ watch.prototype = import$(Object.create(Object.prototype), {
     }).on('unlink', function(it){
       return this$.unlink(path.normalize(it));
     });
-    this.log.info("watching src for file change".green);
+    this.log.info("watching src for file change".cyan);
     this.changeDebounced = debounce(function(){
       var files;
       files = Array.from(this$.buf.change);
