@@ -1,4 +1,4 @@
-require! <[fs path fs-extra stylus uglifycss]>
+require! <[fs path fs-extra stylus uglifycss colors]>
 require! <[./base ../aux ../adapter]>
 
 stylusbuild = (opt={}) -> @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)
@@ -45,7 +45,7 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
             t2 = Date.now!
             @log.info "build: #src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "build #src failed: "
+        @log.error "build #src failed: ".red
         @log.error e.message.toString!
   purge: (files) ->
     for {file, mtime} in files =>
@@ -53,6 +53,6 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
       [des,des-min].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
-        @log.warn "purge: #src --> #f deleted."
+        @log.warn "purge: #src --> #f deleted.".yellow
 
 module.exports = stylusbuild

@@ -1,6 +1,5 @@
-require! <[fs]>
+require! <[fs colors]>
 aux = do
-  logger: {info: console.info, warn: console.warn, error: console.error}
   # is f1 newer than any file in files?
   # or, is f1 newer than files ( as timestamp )?
   # strict: false for >=, or true for >
@@ -17,5 +16,11 @@ aux = do
         dtime = mtime - +fs.stat-sync(f2).mtime # `+` convert to timestamp
         if strict => dtime > 0 else dtime >= 0
       .length
+
+aux.logger = log = {}
+[<[info cyan]> <[warn yellow]> <[error red]>].map (n) ->
+  log[n.0] = (...args) ->
+    args = ( ["[BUILD] #{n.0.toUpperCase![n.1]}"] ++ args)
+    console[n.0].apply console, args
 
 module.exports = aux

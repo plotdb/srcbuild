@@ -1,4 +1,4 @@
-require! <[fs path fs-extra livescript uglify-js]>
+require! <[fs path fs-extra livescript uglify-js colors]>
 require! <[./base ../aux ../adapter]>
 
 
@@ -31,7 +31,7 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
         t2 = Date.now!
         @log.info "build: #src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "build #src failed: "
+        @log.error "build #src failed: ".red
         @log.error e.message.toString!
   purge: (files) ->
     for {file, mtime} in files =>
@@ -39,6 +39,6 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
       [des,des-min].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
-        @log.warn "purge: #src --> #f deleted."
+        @log.warn "purge: #src --> #f deleted.".yellow
 
 module.exports = lscbuild

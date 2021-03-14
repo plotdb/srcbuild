@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript stylus js-yaml marked]>
+require! <[fs path fs-extra pug livescript stylus js-yaml marked colors]>
 require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->
@@ -113,7 +113,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               t2 = Date.now!
               @log.info "build: #src --> #desh ( #{t2 - t1}ms )"
           catch
-            @log.error "build #src failed: "
+            @log.error "build #src failed: ".red
             @log.error e.message.toString!
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
@@ -134,7 +134,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           [desh,desv].filter (f) ~>
             if !fs.exists-sync f => return
             fs.unlink-sync f
-            @log.warn "purge: #src --> #f deleted."
+            @log.warn "purge: #src --> #f deleted.".yellow
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
