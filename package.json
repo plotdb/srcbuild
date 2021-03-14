@@ -38,5 +38,8 @@
     "stylus": "^0.54.8",
     "uglify-js": "^3.13.1",
     "uglifycss": "0.0.29"
+  },
+  "devDependencies": {
+    "ldview": "^0.0.2"
   }
 }

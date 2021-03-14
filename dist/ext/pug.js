@@ -112,13 +112,13 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
       ret.intlbase = function(p){
         p == null && (p = "");
         if (this$.i18n.language) {
-          return path.join(this$.intlbase, opt.i18n.language, p);
+          return path.join(this$.intlbase, this$.i18n.language, p);
         } else {
           return p;
         }
       };
       (ret.filters || (ret.filters = {})).i18n = function(t, o){
-        return this.i18n.t((t || '').trim());
+        return this$.i18n.t((t || '').trim());
       };
     }
     return ret;

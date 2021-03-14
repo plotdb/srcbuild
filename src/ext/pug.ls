@@ -50,8 +50,8 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
     if @i18n =>
       ret.i18n = ~> @i18n.t((it or '').trim!)
-      ret.intlbase = (p = "") ~> if @i18n.language => path.join(@intlbase, opt.i18n.language,p) else p
-      ret.{}filters.i18n = (t, o) -> @i18n.t((t or '').trim!)
+      ret.intlbase = (p = "") ~> if @i18n.language => path.join(@intlbase, @i18n.language,p) else p
+      ret.{}filters.i18n = (t, o) ~> @i18n.t((t or '').trim!)
 
     return ret
 
