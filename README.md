@@ -66,7 +66,7 @@ use `srcbuild.i18n` to quickly setup an `i18next` object:
 
 `options` is passed to `i18next` init function. Additional fields in `options` used by `srcbuild.i18n`:
 
- - `enabled`: true if i18n is enabled. default false
+ - `enabled`: true if i18n is enabled. default true
 
 
 ## on demand build
