@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.5
+
+ - support bundling
+
+
 ## v0.0.4
 
  - fix bug in ext/pug: basedir doesn't exist when initing, causing problem when getting dependencies. use path.resolve(srcdir) instead.
