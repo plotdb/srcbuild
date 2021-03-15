@@ -20,29 +20,28 @@ pugbuild = function(opt){
     srcdir: 'src/pug',
     desdir: 'static'
   }, opt));
+  this.basedir = path.resolve(this.srcdir);
   this.viewdir = path.normalize(path.join(this.base, opt.viewdir || '.view'));
   return this;
 };
 pugbuild.prototype = import$(Object.create(base.prototype), {
   pugResolve: function(fn, src, opt){
-    var des, e;
-    if (!/^@/.exec(fn)) {
-      return path.resolve(path.join(path.dirname(src), fn));
-    }
+    var e;
     try {
       if (/^@\//.exec(fn)) {
         return require.resolve(fn.replace(/^@\//, ""));
       } else if (/^@static\//.exec(fn)) {
-        des = "/" + path.join(this.srcdir.split('/').filter(function(it){
-          return it;
-        }).map(function(){
-          return '..';
-        }).join('/'), this.desdir);
-        return path.resolve(path.join(path.dirname(src), fn.replace(/^@static/, des)));
+        return path.resolve(fn.replace(/^@static/, desdir));
+      } else if (/^@/.exec(fn)) {
+        throw new Error('path starting with `@` is reserved. please use other pathname.');
+      } else if (/^\//.exec(fn)) {
+        return path.resolve(path.join(opt.basedir, fn));
+      } else {
+        return path.resolve(path.join(path.dirname(src), fn));
       }
     } catch (e$) {
       e = e$;
-      throw new Error("no such file or directory: " + fn);
+      throw new Error("error when looking up " + fn + ": " + e.toString());
     }
   },
   getExtapi: function(){
@@ -127,7 +126,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     var code, ret, root;
     code = fs.readFileSync(file);
     ret = pug.compileClientWithDependenciesTracked(code, import$({
-      basedir: path.join(path.dirname(file)),
+      basedir: this.basedir,
       filename: file
     }, this.extapi));
     root = path.resolve('.') + '/';
@@ -188,7 +187,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             fsExtra.ensureDirSync(desvdir);
             ret = pug.compileClient(code, import$({
               filename: src,
-              basedir: this$.srcdir
+              basedir: this$.basedir
             }, this$.extapi));
             ret = " (function() { " + ret + "; module.exports = template; })() ";
             fs.writeFileSync(desv, ret);
@@ -199,7 +198,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
               fsExtra.ensureDirSync(desdir);
               fs.writeFileSync(desh, pug.render(code, import$({
                 filename: src,
-                basedir: this$.srcdir
+                basedir: this$.basedir
               }, this$.extapi)));
               t2 = Date.now();
               results$.push(this$.log.info("build: " + src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));

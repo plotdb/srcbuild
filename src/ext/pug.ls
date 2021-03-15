@@ -6,20 +6,21 @@ pugbuild = (opt={}) ->
   @intlbase = opt.intlbase or 'intl'
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
+  @basedir = path.resolve(@srcdir) # used only in pug.compile related functions
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
   pug-resolve: (fn,src,opt) ->
-    if !/^@/.exec(fn) => return path.resolve(path.join(path.dirname(src), fn))
     try
-      if /^@\//.exec(fn) =>
-        return require.resolve(fn.replace /^@\//, "")
-      else if /^@static\//.exec(fn) =>
-        des = "/" + path.join(@srcdir.split('/').filter(->it).map(-> '..').join('/'), @desdir)
-        return path.resolve(path.join(path.dirname(src), fn.replace(/^@static/,des)))
+      if /^@\//.exec(fn) => return require.resolve(fn.replace /^@\//, "")
+      else if /^@static\//.exec(fn) => return path.resolve(fn.replace(/^@static/,desdir))
+      else if /^@/.exec(fn) => throw new Error('path starting with `@` is reserved. please use other pathname.')
+      else if /^\//.exec(fn) => return path.resolve(path.join(opt.basedir, fn))
+      else return path.resolve(path.join(path.dirname(src), fn))
     catch e
-      throw new Error("no such file or directory: #fn")
+      throw new Error("error when looking up #fn: #{e.toString!}")
+
 
   get-extapi: ->
     ret = do
@@ -59,7 +60,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     code = fs.read-file-sync file
     ret = pug.compileClientWithDependenciesTracked(
       code,
-      {basedir: path.join(path.dirname file), filename: file} <<< @extapi
+      {basedir: @basedir, filename: file} <<< @extapi
     )
     root = path.resolve('.') + '/'
     return (ret.dependencies or []).map ~> it.replace(root, '')
@@ -99,7 +100,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             if /^\/\/- ?module ?/.exec(code) => continue
             desvdir = path.dirname(desv)
             fs-extra.ensure-dir-sync desvdir
-            ret = pug.compileClient code, {filename: src, basedir: @srcdir} <<< @extapi
+            ret = pug.compileClient code, {filename: src, basedir: @basedir} <<< @extapi
             ret = """ (function() { #ret; module.exports = template; })() """
             fs.write-file-sync desv, ret
             t2 = Date.now!
@@ -108,7 +109,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
               fs.write-file-sync(
-                desh, pug.render code, {filename: src, basedir: @srcdir} <<< @extapi
+                desh, pug.render code, {filename: src, basedir: @basedir} <<< @extapi
               )
               t2 = Date.now!
               @log.info "build: #src --> #desh ( #{t2 - t1}ms )"
