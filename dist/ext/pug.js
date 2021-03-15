@@ -31,7 +31,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
       if (/^@\//.exec(fn)) {
         return require.resolve(fn.replace(/^@\//, ""));
       } else if (/^@static\//.exec(fn)) {
-        return path.resolve(fn.replace(/^@static/, desdir));
+        return path.resolve(fn.replace(/^@static/, this.desdir));
       } else if (/^@/.exec(fn)) {
         throw new Error('path starting with `@` is reserved. please use other pathname.');
       } else if (/^\//.exec(fn)) {

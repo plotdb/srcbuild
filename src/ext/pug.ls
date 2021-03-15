@@ -14,7 +14,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
   pug-resolve: (fn,src,opt) ->
     try
       if /^@\//.exec(fn) => return require.resolve(fn.replace /^@\//, "")
-      else if /^@static\//.exec(fn) => return path.resolve(fn.replace(/^@static/,desdir))
+      else if /^@static\//.exec(fn) => return path.resolve(fn.replace(/^@static/,@desdir))
       else if /^@/.exec(fn) => throw new Error('path starting with `@` is reserved. please use other pathname.')
       else if /^\//.exec(fn) => return path.resolve(path.join(opt.basedir, fn))
       else return path.resolve(path.join(path.dirname(src), fn))
