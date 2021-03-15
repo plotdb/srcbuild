@@ -82,6 +82,44 @@ use `watch.demand(target-file)` to force rebuild by request. e.g.,
 `target` to `source` file mapping is done by `resolve` function in custom builder, so to use on demand build, `resolve` must be implemented.
 
 
+## i18n
+
+When i18n object is provided, i18n data can be used in pug files via `i18n` function. e.g.,
+
+    div= i18n("my-key")
+
+will show `my-key` content defined in locale corresponding `default.yaml`:
+
+    my-key: 這是我的鍵
+
+
+To use a namespaced key, add `:` before key. For example:
+
+    div= i18n("new-ns:another-key")
+
+will access to `another-key` in `new-ns.yaml`. Be sure to add your namespace name in `ns` field of i18n option:
+
+    "i18n": { ...  "ns": ["default", "new-ns"] }
+
+additionally, use `intlbase` to wrap path with a i18n based relative path:
+
+    a(href=intlbase('/faq'))
+
+
+## Pug Include Path
+
+Use `@` to include files in modules:
+
+    include @/ldview/dist/ldview.pug
+
+Use `@static` to include files under `static` folder:
+
+    include @static/assets/sample.pug
+
+Other paths starting with `@` are reserved and will cause error when used.
+
+
+
 ## License
 
 MIT
