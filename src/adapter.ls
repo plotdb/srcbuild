@@ -20,10 +20,11 @@ adapter.prototype = Object.create(Object.prototype) <<< do
   build: (files) -> # files: [{file, mtime}, ... ]
   resolve: (file) -> return null
   log-dependencies: (file) ->
-    try
-      list = (@get-dependencies(file) or []).map path.normalize
-    catch e
-      list = []
+    try list = (@get-dependencies(file) or []).map path.normalize catch e
+      @log.error "analyse #file failed: ".red
+      @log.error e.message.toString!
+      throw new Error! <<< {name: 'lderror', id: 999}
+      return # dont touch dependency since we can't get the correct one.
     Array.from(@depends.by[file] or []).map (f) ~> if @depends.on[f] => @depends.on[f].delete file
     setby = @depends.by[file] = new Set!
     list.map (f) ~>
@@ -44,9 +45,12 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     ret = []
     now = Date.now!
     while queue.length
-      affected-files.add(file = queue.pop!)
+      file = queue.pop!
       if !fs.exists-sync file => continue
-      if @is-supported file => @log-dependencies file
+      if @is-supported file =>
+        try @log-dependencies file catch e
+          if e.name == \lderror and e.id == 999 => continue
+      affected-files.add file
       mtime = if opt.force => now else fs.stat-sync(file).mtime
       if !mtimes[file] or mtimes[file] < mtime => mtimes[file] = mtime
       if opt.non-recursive => continue
@@ -77,7 +81,9 @@ adapter.prototype = Object.create(Object.prototype) <<< do
       for file in files =>
         if fs.stat-sync file .is-directory! => recurse file
         if !@is-supported(file) => continue
-        @log-dependencies(file)
+        # on error: simply ignore. builder will take care of it.
+        try @log-dependencies file catch e
+          if e.name == \lderror and e.id == 999 => continue
         init-builds.push file
     recurse @base
     @dirty-check init-builds

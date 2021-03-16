@@ -45,12 +45,15 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     return null;
   },
   logDependencies: function(file){
-    var list, e, setby, this$ = this;
+    var list, e, ref$, setby, this$ = this;
     try {
       list = (this.getDependencies(file) || []).map(path.normalize);
     } catch (e$) {
       e = e$;
-      list = [];
+      this.log.error(("analyse " + file + " failed: ").red);
+      this.log.error(e.message.toString());
+      throw ref$ = new Error(), ref$.name = 'lderror', ref$.id = 999, ref$;
+      return;
     }
     Array.from(this.depends.by[file] || []).map(function(f){
       if (this$.depends.on[f]) {
@@ -80,7 +83,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     return this.purge(ret);
   },
   change: function(files, opt){
-    var affectedFiles, mtimes, queue, ret, now, file, mtime, this$ = this;
+    var affectedFiles, mtimes, queue, ret, now, file, e, mtime, this$ = this;
     opt == null && (opt = {});
     affectedFiles = new Set();
     mtimes = {};
@@ -92,13 +95,21 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     ret = [];
     now = Date.now();
     while (queue.length) {
-      affectedFiles.add(file = queue.pop());
+      file = queue.pop();
       if (!fs.existsSync(file)) {
         continue;
       }
       if (this.isSupported(file)) {
-        this.logDependencies(file);
+        try {
+          this.logDependencies(file);
+        } catch (e$) {
+          e = e$;
+          if (e.name === 'lderror' && e.id === 999) {
+            continue;
+          }
+        }
       }
+      affectedFiles.add(file);
       mtime = opt.force
         ? now
         : fs.statSync(file).mtime;
@@ -152,7 +163,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     var initBuilds, recurse, this$ = this;
     initBuilds = [];
     recurse = function(root){
-      var files, i$, len$, file, results$ = [];
+      var files, i$, len$, file, e, results$ = [];
       if (!fs.existsSync(root)) {
         return;
       }
@@ -167,7 +178,14 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         if (!this$.isSupported(file)) {
           continue;
         }
-        this$.logDependencies(file);
+        try {
+          this$.logDependencies(file);
+        } catch (e$) {
+          e = e$;
+          if (e.name === 'lderror' && e.id === 999) {
+            continue;
+          }
+        }
         results$.push(initBuilds.push(file));
       }
       return results$;

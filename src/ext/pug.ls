@@ -112,7 +112,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               )
               t2 = Date.now!
               @log.info "build: #src --> #desh ( #{t2 - t1}ms )"
-          catch
+          catch e
             @log.error "build #src failed: ".red
             @log.error e.message.toString!
 
