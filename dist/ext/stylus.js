@@ -72,7 +72,7 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
         results$.push(stylus(code).set('filename', src).render(fn$));
       } catch (e$) {
         e = e$;
-        this.log.error(("build " + src + " failed: ").red);
+        this.log.error((src + " failed: ").red);
         results$.push(this.log.error(e.message.toString()));
       }
     }
@@ -88,7 +88,7 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
       fs.writeFileSync(des, css);
       fs.writeFileSync(desMin, codeMin);
       t2 = Date.now();
-      return this$.log.info("build: " + src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
+      return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
     }
   },
   purge: function(files){
@@ -104,7 +104,7 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
         return;
       }
       fs.unlinkSync(f);
-      return this$.log.warn(("purge: " + src + " --> " + f + " deleted.").yellow);
+      return this$.log.warn((src + " --> " + f + " deleted.").yellow);
     }
   }
 });

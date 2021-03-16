@@ -43,9 +43,9 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
             fs.write-file-sync des, css
             fs.write-file-sync des-min, code-min
             t2 = Date.now!
-            @log.info "build: #src --> #des / #des-min ( #{t2 - t1}ms )"
+            @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
-        @log.error "build #src failed: ".red
+        @log.error "#src failed: ".red
         @log.error e.message.toString!
   purge: (files) ->
     for {file, mtime} in files =>
@@ -53,6 +53,6 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
       [des,des-min].filter (f) ~>
         if !fs.exists-sync f => return
         fs.unlink-sync f
-        @log.warn "purge: #src --> #f deleted.".yellow
+        @log.warn "#src --> #f deleted.".yellow
 
 module.exports = stylusbuild

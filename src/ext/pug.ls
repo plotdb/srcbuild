@@ -103,7 +103,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             ret = """ (function() { #ret; module.exports = template; })() """
             fs.write-file-sync desv, ret
             t2 = Date.now!
-            @log.info "build: #src --> #desv ( #{t2 - t1}ms )"
+            @log.info "#src --> #desv ( #{t2 - t1}ms )"
             if !(/^\/\/- ?view ?/.exec(code)) =>
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
@@ -111,9 +111,9 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
                 desh, pug.render code, {filename: src, basedir: path.resolve(@srcdir)} <<< @extapi
               )
               t2 = Date.now!
-              @log.info "build: #src --> #desh ( #{t2 - t1}ms )"
+              @log.info "#src --> #desh ( #{t2 - t1}ms )"
           catch e
-            @log.error "build #src failed: ".red
+            @log.error "#src failed: ".red
             @log.error e.message.toString!
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
@@ -134,7 +134,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           [desh,desv].filter (f) ~>
             if !fs.exists-sync f => return
             fs.unlink-sync f
-            @log.warn "purge: #src --> #f deleted.".yellow
+            @log.warn "#src --> #f deleted.".yellow
 
     lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->

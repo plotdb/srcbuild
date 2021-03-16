@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.7
+
+ - simplify log
+
+
 ## v0.0.6
 
  - trap exception during `log-dependencies` and prevent from further building.

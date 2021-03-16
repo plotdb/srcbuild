@@ -60,10 +60,10 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         fs.writeFileSync(des, code);
         fs.writeFileSync(desMin, codeMin);
         t2 = Date.now();
-        results$.push(this.log.info("build: " + src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )"));
+        results$.push(this.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )"));
       } catch (e$) {
         e = e$;
-        this.log.error(("build " + src + " failed: ").red);
+        this.log.error((src + " failed: ").red);
         results$.push(this.log.error(e.message.toString()));
       }
     }
@@ -82,7 +82,7 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         return;
       }
       fs.unlinkSync(f);
-      return this$.log.warn(("purge: " + src + " --> " + f + " deleted.").yellow);
+      return this$.log.warn((src + " --> " + f + " deleted.").yellow);
     }
   }
 });

@@ -191,7 +191,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             ret = " (function() { " + ret + "; module.exports = template; })() ";
             fs.writeFileSync(desv, ret);
             t2 = Date.now();
-            this$.log.info("build: " + src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
+            this$.log.info(src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
             if (!/^\/\/- ?view ?/.exec(code)) {
               desdir = path.dirname(desh);
               fsExtra.ensureDirSync(desdir);
@@ -200,11 +200,11 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
                 basedir: path.resolve(this$.srcdir)
               }, this$.extapi)));
               t2 = Date.now();
-              results$.push(this$.log.info("build: " + src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));
+              results$.push(this$.log.info(src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));
             }
           } catch (e$) {
             e = e$;
-            this$.log.error(("build " + src + " failed: ").red);
+            this$.log.error((src + " failed: ").red);
             results$.push(this$.log.error(e.message.toString()));
           }
         }
@@ -249,7 +249,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             return;
           }
           fs.unlinkSync(f);
-          return this$.log.warn(("purge: " + src + " --> " + f + " deleted.").yellow);
+          return this$.log.warn((src + " --> " + f + " deleted.").yellow);
         }
       });
     };
