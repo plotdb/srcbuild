@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.9
+
+ - support pug view engine for express
+
+
 ## v0.0.8
 
  - fix bug: trying to get mtime of a non-existed file. 
