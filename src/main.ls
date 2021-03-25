@@ -11,4 +11,4 @@ module.exports = do
       new pug({base} <<< opt{logger,i18n} <<< (opt.pug or {}))
       new bundle({base} <<< opt{logger,i18n}  <<< (opt.bundle or {}))
     ].map -> it.get-adapter!
-    watcher = new watch({adapters} <<< opt{logger, i18n})
+    watcher = new watch({adapters} <<< opt{logger, i18n, ignored})

@@ -51,7 +51,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
         try @log-dependencies file catch e
           if e.name == \lderror and e.id == 999 => continue
       affected-files.add file
-      mtime = if opt.force => now else fs.stat-sync(file).mtime
+      mtime = if opt.force => now else if fs.exists-sync(file) => fs.stat-sync(file).mtime else now
       if !mtimes[file] or mtimes[file] < mtime => mtimes[file] = mtime
       if opt.non-recursive => continue
       Array.from(@depends.on[file] or [])

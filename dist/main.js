@@ -30,7 +30,7 @@ module.exports = {
     });
     return watcher = new watch((ref$ = {
       adapters: adapters
-    }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$));
+    }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$));
   }
 };
 function import$(obj, src){

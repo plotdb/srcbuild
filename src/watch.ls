@@ -4,7 +4,7 @@ watch = (opt={}) ->
   @opt = opt
   @buf = {}
   @adapters = opt.adapters or []
-  @chokidar-cfg = {persistent: true, ignored: [], ignoreInitial: true}
+  @chokidar-cfg = {persistent: true, ignored: opt.ignored or ['.git'], ignoreInitial: true}
   @log = opt.logger or aux.logger
   @init!
   @

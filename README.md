@@ -14,6 +14,8 @@ where
 
  - `base`: root dir for `src` and `static` folders. default `.`
  - `i18n`: i18n object. 
+ - `ignored`: files to be ignored. in [anymatch](https://github.com/micromatch/anymatch)-compatible definition.
+   - by default ['.git']
  - `logger`: optional. for logging output. use `console.log` by default. 
    - sample logger with `pino`:
 

@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.8
+
+ - fix bug: trying to get mtime of a non-existed file. 
+ - support options for files to ignore. by default, ignore `.git` folders.
+
+
 ## v0.0.7
 
  - simplify log

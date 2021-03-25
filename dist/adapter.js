@@ -112,7 +112,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       affectedFiles.add(file);
       mtime = opt.force
         ? now
-        : fs.statSync(file).mtime;
+        : fs.existsSync(file) ? fs.statSync(file).mtime : now;
       if (!mtimes[file] || mtimes[file] < mtime) {
         mtimes[file] = mtime;
       }
