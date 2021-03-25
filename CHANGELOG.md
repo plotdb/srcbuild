@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.10
+
+ - fix bug: basedir should be opt.basedir
+
+
 ## v0.0.9
 
  - support pug view engine for express
