@@ -6,6 +6,11 @@ i18n({enabled:true})
   .then (i18n) ->
     ret = main.lsp {i18n}
 
+# sample bundling:
+# ret = main.lsp {i18n, bundle: {configFile: 'bundle.json'}}
+# sample bundle.json:
+# {"js": { "test": [ "web/static/js/index.js" ] } }
+
 # on demand build sample
 /*
 setTimeout (->

@@ -189,8 +189,8 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
           sizeMin: fs.statSync(desMin).size
         };
         size = ret.size, sizeMin = ret.sizeMin, elapsed = ret.elapsed;
-        this$.log.info("bundle static/" + type + "/pack/" + name + "." + type + " ( " + size + " bytes / " + elapsed + "ms )");
-        this$.log.info("bundle static/" + type + "/pack/" + name + ".min." + type + " ( " + sizeMin + " bytes / " + elapsed + "ms )");
+        this$.log.info("bundle " + desdir + "/" + name + "." + type + " ( " + size + " bytes / " + elapsed + "ms )");
+        this$.log.info("bundle " + desdir + "/" + name + ".min." + type + " ( " + sizeMin + " bytes / " + elapsed + "ms )");
         return ret;
       });
     });

@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.12
+
+ - add bundling sample code
+ - fix bundling file path shown in log
+
+
 ## v0.0.11
 
  - fix bug: `desdir` and `base` not passed to pug in pug view constructor

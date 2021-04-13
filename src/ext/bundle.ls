@@ -84,8 +84,8 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
           size: fs.stat-sync(des).size
           size-min: fs.stat-sync(des-min).size
         {size,size-min,elapsed} = ret
-        @log.info "bundle static/#type/pack/#name.#type ( #size bytes / #{elapsed}ms )"
-        @log.info "bundle static/#type/pack/#name.min.#type ( #size-min bytes / #{elapsed}ms )"
+        @log.info "bundle #desdir/#name.#type ( #size bytes / #{elapsed}ms )"
+        @log.info "bundle #desdir/#name.min.#type ( #size-min bytes / #{elapsed}ms )"
         ret
 
   purge: (files) -> @build files
