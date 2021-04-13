@@ -13,7 +13,9 @@ pugViewEngine = function(options){
     logger: options.logger,
     i18n: options.i18n,
     viewdir: options.viewdir,
-    srcdir: options.srcdir
+    srcdir: options.srcdir,
+    desdir: options.desdir,
+    base: options.base
   });
   extapi = builder.getExtapi();
   logger = options.logger;

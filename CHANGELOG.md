@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.11
+
+ - fix bug: `desdir` and `base` not passed to pug in pug view constructor
+
+
 ## v0.0.10
 
  - fix bug: basedir should be opt.basedir

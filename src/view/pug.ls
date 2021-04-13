@@ -4,7 +4,7 @@ reload = require("require-reload")(require)
 fsp = fs.promises
 
 pug-view-engine = (options) ->
-  builder = new pugbuild options{logger, i18n, viewdir, srcdir}
+  builder = new pugbuild options{logger, i18n, viewdir, srcdir, desdir, base}
   extapi = builder.get-extapi!
   logger = options.logger
   # pugcache[file] = cache information for `file`. each info contains
