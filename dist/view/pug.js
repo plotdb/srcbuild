@@ -8,15 +8,22 @@ pugbuild = require("../ext/pug");
 reload = require("require-reload")(require);
 fsp = fs.promises;
 pugViewEngine = function(options){
-  var builder, extapi, logger, pugcache, log;
-  builder = new pugbuild({
+  var opt, k, v, builder, extapi, logger, pugcache, log;
+  opt = {
     logger: options.logger,
     i18n: options.i18n,
     viewdir: options.viewdir,
     srcdir: options.srcdir,
     desdir: options.desdir,
     base: options.base
-  });
+  };
+  for (k in opt) {
+    v = opt[k];
+    if (!(v != null)) {
+      delete opt[k];
+    }
+  }
+  builder = new pugbuild(opt);
   extapi = builder.getExtapi();
   logger = options.logger;
   pugcache = {};

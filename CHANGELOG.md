@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.13
+
+ - fix bug: incorrect parameter passing in view/pug to ext/pug
+
+
 ## v0.0.12
 
  - add bundling sample code
