@@ -72,7 +72,8 @@ check `src/ext/lsc.ls` or `src/ext/pug.ls` for example.
 Except common options, each builder may support different options:
 
  - `pug`:
-   - `intlbase`: base dir of i18n files. default `intl`.
+   - `i18n.intlbase(subpath)`: base dir of i18n files, with optional subpath parameter. default `intl`.
+   - `i18n.language()`: current language. (e.g., `zh-TW` )
  - `bundle`: bundle options. includes:
    - `configFile`: json file storing bundle configuration. optional.
    - `config`: bundle configuration in following format:

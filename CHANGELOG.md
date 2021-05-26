@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.14
+
+ - add `i18n.intlbase` and `i18n.langauge` pug api and deprecate `intlbase` pug api.
+
+
 ## v0.0.13
 
  - fix bug: incorrect parameter passing in view/pug to ext/pug
