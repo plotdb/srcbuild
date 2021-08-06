@@ -5,7 +5,7 @@ Source file tree builder.
 
 ## Usage
 
-setup a lsp watcher:
+setup a lsp ( livescript + stylus + pug ) watcher:
 
     require! <[@plotdb/srcbuild]>
     srcbuild.lsp {base: 'web', i18n: ..., logger: ...}
@@ -64,6 +64,13 @@ with following user-defined functions:
  - `resolve(file)`: return source file path for given target file `file`.
    - return null if the given target file can't be derived from any supported source files.
 
+and the common options for `init` are as following:
+
+ - `base`: root directory for srcbuild to run.
+ - `srcdir`: directory for source files. should be relative to `base`. default `src` if omitted.
+ - `desdir`: directory for built files. should be relative to `base`. default `static` if omitted.
+ - `logger`: logger for log output. use `console` if omitted.
+
 check `src/ext/lsc.ls` or `src/ext/pug.ls` for example. 
 
 
@@ -72,8 +79,20 @@ check `src/ext/lsc.ls` or `src/ext/pug.ls` for example.
 Except common options, each builder may support different options:
 
  - `pug`:
-   - `i18n.intlbase(subpath)`: base dir of i18n files, with optional subpath parameter. default `intl`.
-   - `i18n.language()`: current language. (e.g., `zh-TW` )
+   - `intlbase`: base dir to place i18n files. for example, `intl` part of `/intl/zh-TW/index.html`. default `intl`.
+   - `i18n`: an optional i18n object having the same interface with `i18next`
+     - when provided, enable i18n building with following additional features:
+       - source files will be built to multiple locations based on i18n config, such as `/intl/zh-TW/index.html`.
+       - an additional function `i18n` will be available during pug compilation.
+         - `i18n(text)`: translate `text` based on the `i18n` object provided.
+         - `language()`: return current language. ( e.g., `zh-TW` )
+         - `intlbase(p)`: return a path to given `p`, based on current i18n setup.
+         - additionally, a pug filter `i18n` is also available, which can be used like:
+
+             span:i18n translate this text
+
+   - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
+
  - `bundle`: bundle options. includes:
    - `configFile`: json file storing bundle configuration. optional.
    - `config`: bundle configuration in following format:
@@ -85,6 +104,19 @@ Except common options, each builder may support different options:
          ...
        }
      }
+
+These options are constructor options for corresponding builder, e.g., for pug builder:
+
+    new pugbuild({ i18n: ... }) 
+
+When using shorthands like `srcbuild.lsp(...)`, you can also specify corresponding option in scope, such as:
+
+    srcbuild.lsp({
+      base: '...', i18n: '...',
+      pug: {intlbase: '...'}
+    });
+
+common options will be overwritten by scoped options.
 
 
 ## ODB / On demand build
@@ -168,6 +200,11 @@ Following functions are added:
  - `md(code)`: convert `markdown` to `HTML`.
  - `yaml(path)`: read `yaml` file and return object. (tentative)
  - `yamls(path)`: read content of `yaml` files under `path` directory. (tentative)
+
+
+### Additional filters / functions
+
+There are some additional `i18n` filters available if properly configured. See above for more information.
 
 
 ## License
