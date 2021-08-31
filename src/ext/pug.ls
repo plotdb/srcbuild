@@ -35,6 +35,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
                return new stylus.nodes.Unit(a.indexOf b.val)
              .render!
         'md': (text, opt) -> marked text
+      json: -> JSON.parse(fs.read-file-sync it)
       md: marked
       yaml: -> js-yaml.safe-load fs.read-file-sync it
       yamls: (dir) ~>

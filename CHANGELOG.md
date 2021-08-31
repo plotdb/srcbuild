@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.17
+
+ - support `json` API for reading json file in pug
+
+
 ## v0.0.16
 
  - fix bug: glslify transformed by browserify should have basedir from src file dir.

@@ -81,6 +81,9 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           return marked(text);
         }
       },
+      json: function(it){
+        return JSON.parse(fs.readFileSync(it));
+      },
       md: marked,
       yaml: function(it){
         return jsYaml.safeLoad(fs.readFileSync(it));
