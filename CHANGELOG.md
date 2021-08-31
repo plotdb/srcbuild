@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.15
+
+ - upgrade `path-parse` to fix vulnerability
+ - support glslify transfomration by option `use-glslify`
+
+
 ## v0.0.14
 
  - add `i18n.intlbase` and `i18n.langauge` pug api and deprecate `intlbase` pug api.

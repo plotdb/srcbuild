@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "",
   "main": "./dist/main.js",
   "files": [
@@ -25,9 +25,11 @@
   },
   "dependencies": {
     "@loadingio/debounce.js": "0.0.1",
+    "browserify": "^17.0.0",
     "chokidar": "^3.5.1",
     "colors": "^1.4.0",
     "fs-extra": "^9.1.0",
+    "glslify": "^7.1.1",
     "i18next": "^19.9.2",
     "i18next-fs-backend": "^1.1.0",
     "i18next-http-middleware": "^3.1.0",
@@ -41,6 +43,7 @@
     "uglifycss": "0.0.29"
   },
   "devDependencies": {
+    "shaderlib": "github:zbryikt/shaderlib",
     "ldview": "^0.0.2"
   }
 }

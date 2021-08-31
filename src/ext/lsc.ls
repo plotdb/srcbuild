@@ -1,8 +1,17 @@
-require! <[fs path fs-extra livescript uglify-js colors]>
+require! <[fs path stream fs-extra livescript uglify-js colors]>
 require! <[./base ../aux ../adapter]>
 
+rootdir = path.dirname fs.realpathSync __filename
+glslify = null
+browserify = null
 
-lscbuild = (opt={}) -> @init({srcdir: 'src/ls', desdir: 'static/js'} <<< opt)
+lscbuild = (opt={}) ->
+  @ <<< opt{use-glslify}
+  if @use-glslify and !glslify =>
+    glslify := require "glslify"
+    browserify := require "browserify"
+  @init({srcdir: 'src/ls', desdir: 'static/js'} <<< opt)
+
 lscbuild.prototype = Object.create(base.prototype) <<< do
   get-dependencies: (file) -> return []
   is-supported: (file) -> /\.ls$/.exec(file) and file.startsWith(@srcdir)
@@ -16,23 +25,38 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
     des: file.replace(@srcdir, @desdir).replace(/\.ls$/, '.js')
     des-min: file.replace(@srcdir, @desdir).replace(/\.ls$/, '.min.js')
   build: (files) ->
-    for {file, mtime} in files =>
+    Promise.all files.map ({file, mtime}) ~>
       {src, des, des-min} = @map(file)
-      if !fs.exists-sync(src) or aux.newer(des, mtime) => continue
-      try
-        t1 = Date.now!
-        code = fs.read-file-sync src .toString!
-        desdir = path.dirname(des)
-        fs-extra.ensure-dir-sync desdir
-        code = livescript.compile(fs.read-file-sync(src)toString!,{bare: true, header: false})
-        code-min = uglify-js.minify(code).code
-        fs.write-file-sync des, code
-        fs.write-file-sync des-min, code-min
-        t2 = Date.now!
-        @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
-      catch
-        @log.error "#src failed: ".red
-        @log.error e.message.toString!
+      t1 = Date.now!
+      Promise.resolve!
+        .then ~>
+          if !fs.exists-sync(src) or aux.newer(des, mtime) => return Promise.resolve!
+          code = fs.read-file-sync src .toString!
+          desdir = path.dirname(des)
+          fs-extra.ensure-dir-sync desdir
+          code = livescript.compile(fs.read-file-sync(src)toString!,{bare: true, header: false})
+          if !@use-glslify => return Promise.resolve!
+
+          (res, rej) <~ new Promise _
+          s = new stream.Readable!
+          s.push code
+          s.push null
+          bobj = browserify s, {basedir: rootdir}
+          bobj.transform \glslify
+          bobj.bundle (e, b) -> if e => return rej e else res b
+
+        .then (code) ~>
+          if !code => return
+          code-min = uglify-js.minify(code).code or ''
+          fs.write-file-sync des, code
+          fs.write-file-sync des-min, code-min
+          t2 = Date.now!
+          @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
+
+        .catch (e) ~>
+          @log.error "#src failed: ".red
+          @log.error e.message.toString!
+
   purge: (files) ->
     for {file, mtime} in files =>
       {src,des,des-min} = @map(file)
