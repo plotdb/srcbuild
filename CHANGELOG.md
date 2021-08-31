@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.16
+
+ - fix bug: glslify transformed by browserify should have basedir from src file dir.
+
+
 ## v0.0.15
 
  - upgrade `path-parse` to fix vulnerability

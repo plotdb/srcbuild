@@ -1,7 +1,6 @@
 require! <[fs path stream fs-extra livescript uglify-js colors]>
 require! <[./base ../aux ../adapter]>
 
-rootdir = path.dirname fs.realpathSync __filename
 glslify = null
 browserify = null
 
@@ -41,7 +40,8 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
           s = new stream.Readable!
           s.push code
           s.push null
-          bobj = browserify s, {basedir: rootdir}
+          # module lookup from src file directory.
+          bobj = browserify s, {basedir: path.dirname(src)}
           bobj.transform \glslify
           bobj.bundle (e, b) -> if e => return rej e else res b
 
