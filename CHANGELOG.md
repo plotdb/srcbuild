@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.18
+
+ - fix bug: lsc builder doesn't build unless glslify is enabled
+
+
 ## v0.0.17
 
  - support `json` API for reading json file in pug

@@ -34,7 +34,7 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
           desdir = path.dirname(des)
           fs-extra.ensure-dir-sync desdir
           code = livescript.compile(fs.read-file-sync(src)toString!,{bare: true, header: false})
-          if !@use-glslify => return Promise.resolve!
+          if !@use-glslify => return Promise.resolve code
 
           (res, rej) <~ new Promise _
           s = new stream.Readable!

@@ -67,7 +67,7 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
           header: false
         });
         if (!this$.useGlslify) {
-          return Promise.resolve();
+          return Promise.resolve(code);
         }
         return new Promise(function(res, rej){
           var s, bobj;
