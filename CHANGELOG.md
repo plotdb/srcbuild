@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.19
+
+ - bump stylus version to 0.55.0 for removing deprecated dependencies
+
+
 ## v0.0.18
 
  - fix bug: lsc builder doesn't build unless glslify is enabled
