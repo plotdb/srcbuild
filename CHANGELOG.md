@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.21
+
+ - fix module resolving path bug
+
+
 ## v0.0.20
 
  - resolve module path from basedir in ext/pug.

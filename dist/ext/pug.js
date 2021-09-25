@@ -28,7 +28,9 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     var e;
     try {
       if (/^@\//.exec(fn)) {
-        return require.resolve(fn.replace(/^@\//, ""), [this.base]);
+        return require.resolve(fn.replace(/^@\//, ""), {
+          paths: [this.base]
+        });
       } else if (/^@static\//.exec(fn)) {
         return path.resolve(fn.replace(/^@static/, this.desdir));
       } else if (/^@/.exec(fn)) {
