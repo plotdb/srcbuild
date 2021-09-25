@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.20
+
+ - resolve module path from basedir in ext/pug.
+
+
 ## v0.0.19
 
  - bump stylus version to 0.55.0 for removing deprecated dependencies
