@@ -142,7 +142,8 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     code = fs.readFileSync(file);
     ret = pug.compileClientWithDependenciesTracked(code, import$({
       basedir: path.resolve(this.srcdir),
-      filename: file
+      filename: file,
+      doctype: 'html'
     }, this.extapi));
     root = path.resolve('.') + '/';
     return (ret.dependencies || []).map(function(it){
@@ -202,7 +203,8 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             fsExtra.ensureDirSync(desvdir);
             ret = pug.compileClient(code, import$({
               filename: src,
-              basedir: path.resolve(this$.srcdir)
+              basedir: path.resolve(this$.srcdir),
+              doctype: 'html'
             }, this$.extapi));
             ret = " (function() { " + ret + "; module.exports = template; })() ";
             fs.writeFileSync(desv, ret);
@@ -213,7 +215,8 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
               fsExtra.ensureDirSync(desdir);
               fs.writeFileSync(desh, pug.render(code, import$({
                 filename: src,
-                basedir: path.resolve(this$.srcdir)
+                basedir: path.resolve(this$.srcdir),
+                doctype: 'html'
               }, this$.extapi)));
               t2 = Date.now();
               results$.push(this$.log.info(src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));

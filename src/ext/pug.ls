@@ -63,7 +63,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     code = fs.read-file-sync file
     ret = pug.compileClientWithDependenciesTracked(
       code,
-      {basedir: path.resolve(@srcdir), filename: file} <<< @extapi
+      {basedir: path.resolve(@srcdir), filename: file, doctype: \html} <<< @extapi
     )
     root = path.resolve('.') + '/'
     return (ret.dependencies or []).map ~> it.replace(root, '')
@@ -103,7 +103,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             if /^\/\/- ?module ?/.exec(code) => continue
             desvdir = path.dirname(desv)
             fs-extra.ensure-dir-sync desvdir
-            ret = pug.compileClient code, {filename: src, basedir: path.resolve(@srcdir)} <<< @extapi
+            ret = pug.compileClient code, {filename: src, basedir: path.resolve(@srcdir), doctype: \html} <<< @extapi
             ret = """ (function() { #ret; module.exports = template; })() """
             fs.write-file-sync desv, ret
             t2 = Date.now!
@@ -112,7 +112,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
               fs.write-file-sync(
-                desh, pug.render code, {filename: src, basedir: path.resolve(@srcdir)} <<< @extapi
+                desh, pug.render code, {filename: src, basedir: path.resolve(@srcdir), doctype: \html} <<< @extapi
               )
               t2 = Date.now!
               @log.info "#src --> #desh ( #{t2 - t1}ms )"

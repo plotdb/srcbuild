@@ -57,7 +57,10 @@ pug-view-engine = (options) ->
         .then (obj) ->
           # only if mtime is set ( not fresh ) and we explicitly ask for want cache, will cache be true.
           if !(lc.is-cached = (obj.mtime? and lc.use-cache)) => obj.mtime = lc.mtime
-          ret = pug.compileClient(obj.buf, {} <<< opt <<< {filename: src, basedir: opt.basedir} <<< extapi)
+          ret = pug.compileClient(
+            obj.buf,
+            {} <<< opt <<< {filename: src, basedir: opt.basedir, doctype: \html} <<< extapi
+          )
           ret = """ (function() { #ret; module.exports = template; })() """
           fs-extra.ensure-dir path.dirname(desv)
             .then -> fsp.write-file desv, ret

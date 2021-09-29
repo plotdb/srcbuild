@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.23
+
+ - set `doctype` to `html` to prevent `t="t"` generation.
+
+
 ## v0.0.22
 
  - add `srcbuild-pug` command for building pug with extapi
