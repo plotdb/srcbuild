@@ -37,14 +37,14 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
         'md': (text, opt) -> marked text
       json: -> JSON.parse(fs.read-file-sync it)
       md: marked
-      yaml: -> js-yaml.safe-load fs.read-file-sync it
+      yaml: -> js-yaml.load fs.read-file-sync it
       yamls: (dir) ~>
         ret = fs.readdir-sync dir
           .map -> "#dir/#it"
           .filter -> /\.yaml$/.exec(it)
           .map ~>
             try
-              js-yaml.safe-load(fs.read-file-sync it)
+              js-yaml.load(fs.read-file-sync it)
             catch e
               @log.error "[ERROR@#it]: ", e
         return ret

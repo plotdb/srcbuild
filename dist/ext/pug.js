@@ -88,7 +88,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
       },
       md: marked,
       yaml: function(it){
-        return jsYaml.safeLoad(fs.readFileSync(it));
+        return jsYaml.load(fs.readFileSync(it));
       },
       yamls: function(dir){
         var ret;
@@ -99,7 +99,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         }).map(function(it){
           var e;
           try {
-            return jsYaml.safeLoad(fs.readFileSync(it));
+            return jsYaml.load(fs.readFileSync(it));
           } catch (e$) {
             e = e$;
             return this$.log.error("[ERROR@" + it + "]: ", e);
