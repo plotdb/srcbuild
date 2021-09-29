@@ -11,7 +11,7 @@ function pug_rethrow(e,n,r,t){if(!(e instanceof Error))throw e;if(!("undefined"=
 function pug_style(r){if(!r)return"";if("object"==typeof r){var t="";for(var e in r)pug_has_own_property.call(r,e)&&(t=t+e+":"+r[e]+";");return t}return r+""}function template(locals) {var pug_html = "", pug_mixins = {}, pug_interp;var pug_debug_filename, pug_debug_line;try {;
     var locals_for_with = (locals || {});
     
-    (function (Array, parentName, prefix) {
+    (function (Array, parentName, prefix, yaml) {
       ;pug_debug_line = 1;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
 ;pug_debug_line = 2;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
@@ -61,6 +61,8 @@ pug_html = pug_html + "\u003Cdiv\u003E";
 pug_html = pug_html + "hi\u003C\u002Fdiv\u003E";
 }
 }, "123");
+;pug_debug_line = 11;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+yaml("web/src/pug/sample.yaml")
 pug_html = pug_html + "\u003C\u002Fscript\u003E\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
     }.call(this, "Array" in locals_for_with ?
         locals_for_with.Array :
@@ -68,5 +70,7 @@ pug_html = pug_html + "\u003C\u002Fscript\u003E\u003C\u002Fbody\u003E\u003C\u002
         locals_for_with.parentName :
         typeof parentName !== 'undefined' ? parentName : undefined, "prefix" in locals_for_with ?
         locals_for_with.prefix :
-        typeof prefix !== 'undefined' ? prefix : undefined));
+        typeof prefix !== 'undefined' ? prefix : undefined, "yaml" in locals_for_with ?
+        locals_for_with.yaml :
+        typeof yaml !== 'undefined' ? yaml : undefined));
     ;} catch (err) {pug_rethrow(err, pug_debug_filename, pug_debug_line);};return pug_html;}; module.exports = template; })() 
