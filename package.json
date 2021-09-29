@@ -1,14 +1,15 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "",
   "main": "./dist/main.js",
   "files": [
     "dist/**/*"
   ],
   "bin": {
-    "srcbuild": "./dist/cli"
+    "srcbuild": "./dist/cli",
+    "srcbuild-pug": "./dist/pug-cli"
   },
   "scripts": {
     "start": "./dist/cli"
@@ -40,10 +41,11 @@
     "require-reload": "^0.2.2",
     "stylus": "^0.55.0",
     "uglify-js": "^3.13.1",
-    "uglifycss": "0.0.29"
+    "uglifycss": "0.0.29",
+    "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "shaderlib": "github:zbryikt/shaderlib",
-    "ldview": "^0.0.2"
+    "ldview": "^0.0.2",
+    "shaderlib": "github:zbryikt/shaderlib"
   }
 }

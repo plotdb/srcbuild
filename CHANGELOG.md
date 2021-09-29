@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.22
+
+ - add `srcbuild-pug` command for building pug with extapi
+ - fix yaml loading issue by using `load` instead of `safe-load`.
+
+
 ## v0.0.21
 
  - fix module resolving path bug
