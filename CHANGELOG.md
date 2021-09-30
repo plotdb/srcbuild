@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.24
+
+ - set `doctype` to `html` also in `pug-cli` to prevent `t="t"` generation.
+
+
 ## v0.0.23
 
  - set `doctype` to `html` to prevent `t="t"` generation.

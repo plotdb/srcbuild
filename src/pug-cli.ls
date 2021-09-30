@@ -19,7 +19,10 @@ des = argv.o
 basedir = argv.b or path.dirname(src) or '.'
 builder = new pugbuild opt
 extapi = builder.get-extapi!
-ret = pug.render(fs.read-file-sync(src).toString!, {} <<< {filename: src, basedir: opt.basedir} <<< extapi)
+ret = pug.render(
+  fs.read-file-sync(src).toString!,
+  {} <<< {filename: src, basedir: opt.basedir, doctype: \html} <<< extapi
+)
 if des =>
   fs-extra.ensure-dir-sync path.dirname(des)
   fs.write-file-sync des, ret
