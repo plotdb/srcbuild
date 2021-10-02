@@ -1,3 +1,5 @@
  - track files failed to `get-dependencies` and retry each time a new change event is fired.
  - custom functions access files relative to module root instead of relative to source file.
    - have to access locals to resolve correct path
+ - glslify should not be plugged directly inside `lscbuild`.
+   - We should remove it, and perhaps make it a independent builder

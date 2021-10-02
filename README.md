@@ -94,6 +94,7 @@ Except common options, each builder may support different options:
    - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
  - `lsc`:
    - `useGlslify`: default false. set to true if you need glslify of lsc files.
+     - *NOTE* this is an experiment feature and may be removed ( move to standalone builder ) in the future.
  - `bundle`: bundle options. includes:
    - `configFile`: json file storing bundle configuration. optional.
    - `config`: bundle configuration in following format:
