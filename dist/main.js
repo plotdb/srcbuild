@@ -18,13 +18,13 @@ module.exports = {
     adapters = [
       new lsc(import$((ref$ = {
         base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$), opt.lsc || {})), new stylus(import$((ref$ = {
+      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.lsc || {})), new stylus(import$((ref$ = {
         base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$), opt.stylus || {})), new pug(import$((ref$ = {
+      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.stylus || {})), new pug(import$((ref$ = {
         base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$), opt.pug || {})), new bundle(import$((ref$ = {
+      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.pug || {})), new bundle(import$((ref$ = {
         base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$), opt.bundle || {}))
+      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.bundle || {}))
     ].map(function(it){
       return it.getAdapter();
     });

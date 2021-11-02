@@ -6,9 +6,9 @@ module.exports = do
   lsp: (opt = {}) ->
     base = opt.base or 'web'
     adapters = [
-      new lsc({base} <<< opt{logger,i18n} <<< (opt.lsc or {}))
-      new stylus({base} <<< opt{logger,i18n}  <<< (opt.stylus or {}))
-      new pug({base} <<< opt{logger,i18n} <<< (opt.pug or {}))
-      new bundle({base} <<< opt{logger,i18n}  <<< (opt.bundle or {}))
+      new lsc({base} <<< opt{logger,i18n,ignored} <<< (opt.lsc or {}))
+      new stylus({base} <<< opt{logger,i18n,ignored}  <<< (opt.stylus or {}))
+      new pug({base} <<< opt{logger,i18n,ignored} <<< (opt.pug or {}))
+      new bundle({base} <<< opt{logger,i18n,ignored}  <<< (opt.bundle or {}))
     ].map -> it.get-adapter!
     watcher = new watch({adapters} <<< opt{logger, i18n, ignored})

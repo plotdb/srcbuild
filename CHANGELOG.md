@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.25 (upcoming)
+
+ - pass `ignored` to adapter to bypass unnecessary files to save time 
+
+
 ## v0.0.24
 
  - set `doctype` to `html` also in `pug-cli` to prevent `t="t"` generation.

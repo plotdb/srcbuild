@@ -1,9 +1,10 @@
-require! <[fs path fs-extra pug ./aux]>
+require! <[fs path fs-extra anymatch ./aux]>
 
 adapter = (opt={}) ->
   @opt = opt
   @base = opt.base or '.'
   @log = opt.logger or aux.logger
+  @ignored = opt.{}watcher.ignored or []
   @depends = {on: {}, by: {}}
 
   if opt.get-dependencies => @get-dependencies = that
@@ -77,15 +78,22 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     init-builds = []
     recurse = (root) ~>
       if !fs.exists-sync(root) => return
-      files = fs.readdir-sync root .map -> path.normalize("#root/#it")
+      len1 = fs.readdir-sync(root).length
+      len2 = fs.readdir-sync(root).filter(~>!anymatch((@ignored or []), it)).length
+      files = fs.readdir-sync root
+        .filter ~> !anymatch((@ignored or []), it)
+        .map -> path.normalize("#root/#it")
       for file in files =>
         if fs.stat-sync file .is-directory! => recurse file
         if !@is-supported(file) => continue
+        # this is a time consuming func call. consider ODB instead.
         # on error: simply ignore. builder will take care of it.
         try @log-dependencies file catch e
           if e.name == \lderror and e.id == 999 => continue
         init-builds.push file
+    t1 = Date.now!
     recurse @base
+    console.log("adopt recurse takes #{Date.now! - t1}ms ( #{@base} )")
     @dirty-check init-builds
 
 module.exports = adapter
