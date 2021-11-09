@@ -28,9 +28,9 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
         'lsc': (text, opt) ->
           code = livescript.compile(text,{bare:true,header:false})
           # we may need an option to turn off uglify-js but for now we will enable it by default.
-          # we disable `unused` since we may somehow wrap code in function in `@plotdb/block`
-          # and code in that syntax will be removed if unused is enabled
-          code-min = uglify-js.minify(code,{compress:unused:false}).code or ''
+          # we disable `compress` since we may somehow postprocess code in function ( such as in `@plotdb/block` )
+          # yet some code we need may be treated as unused and  removed by compress option
+          code-min = uglify-js.minify(code,{compress:false}).code or ''
           return code-min
         'lson': (text, opt) -> return livescript.compile(text,{bare:true,header:false,json:true})
         'stylus': (text, opt) ->

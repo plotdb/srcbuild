@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.28
+
+ - totally remove `compress` option to prevent unwanted side effect of code removal
+
+
 ## v0.0.27
 
  - dont compress unused in pug lsc filter for our potential use of custom script block design in @plotdb/block
