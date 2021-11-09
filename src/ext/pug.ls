@@ -30,7 +30,6 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           # we may need an option to turn off uglify-js but for now we will enable it by default.
           code-min = uglify-js.minify(code).code or ''
           return code-min
-
         'lson': (text, opt) -> return livescript.compile(text,{bare:true,header:false,json:true})
         'stylus': (text, opt) ->
           code = stylus(text)
