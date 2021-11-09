@@ -93,7 +93,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
         init-builds.push file
     t1 = Date.now!
     recurse @base
-    console.log("adopt recurse takes #{Date.now! - t1}ms ( #{@base} )")
+    #console.log("adopt recurse takes #{Date.now! - t1}ms ( #{@base} )")
     @dirty-check init-builds
 
 module.exports = adapter

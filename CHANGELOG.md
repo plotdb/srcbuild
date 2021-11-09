@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.26
+
+ - remove log
+
+
 ## v0.0.25
 
  - pass `ignored` to adapter to bypass unnecessary files to save time 

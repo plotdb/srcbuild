@@ -199,7 +199,6 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     };
     t1 = Date.now();
     recurse(this.base);
-    console.log("adopt recurse takes " + (Date.now() - t1) + "ms ( " + this.base + " )");
     return this.dirtyCheck(initBuilds);
   }
 });
