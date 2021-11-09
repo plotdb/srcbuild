@@ -68,7 +68,11 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             bare: true,
             header: false
           });
-          codeMin = uglifyJs.minify(code).code || '';
+          codeMin = uglifyJs.minify(code, {
+            compress: {
+              unused: false
+            }
+          }).code || '';
           return codeMin;
         },
         'lson': function(text, opt){

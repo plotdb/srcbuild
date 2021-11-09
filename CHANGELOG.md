@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.27
+
+ - dont compress unused in pug lsc filter for our potential use of custom script block design in @plotdb/block
+
+
 ## v0.0.26
 
  - remove log
