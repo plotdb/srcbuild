@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript stylus js-yaml marked colors]>
+require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked colors]>
 require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->
@@ -25,15 +25,21 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     ret = do
       plugins: [{resolve: (...args) ~> @pug-resolve.apply @, args}]
       filters: do
-        'lsc': (text, opt) -> return livescript.compile(text,{bare:true,header:false})
+        'lsc': (text, opt) ->
+          code = livescript.compile(text,{bare:true,header:false})
+          # we may need an option to turn off uglify-js but for now we will enable it by default.
+          code-min = uglify-js.minify(code).code or ''
+          return code-min
+
         'lson': (text, opt) -> return livescript.compile(text,{bare:true,header:false,json:true})
         'stylus': (text, opt) ->
-           stylus(text)
-             .set \filename, 'inline'
-             .define 'index', (a,b) ->
-               a = (a.string or a.val).split(' ')
-               return new stylus.nodes.Unit(a.indexOf b.val)
-             .render!
+          code = stylus(text)
+            .set \filename, 'inline'
+            .define 'index', (a,b) ->
+              a = (a.string or a.val).split(' ')
+              return new stylus.nodes.Unit(a.indexOf b.val)
+            .render!
+          code-min = uglifycss.processString(code, uglyComments: true)
         'md': (text, opt) -> marked text
       json: -> JSON.parse(fs.read-file-sync it)
       md: marked

@@ -1,12 +1,15 @@
 doctype html
 html
   head
+    style(type="text/css"): :stylus
+      html, body { width: 100%; height: 100%}
+      h1 { color: #f00; }
   body
     h1 hi
     script
       include:lsc index.ls
       include @/ldview/dist/ldview.pug
-      +scope("123")
-        div hi
-      -
-        yaml("web/src/pug/sample.yaml")
+    +scope("123")
+      div hi
+    -
+      yaml("web/src/pug/sample.yaml")

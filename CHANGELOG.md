@@ -1,8 +1,9 @@
 # Change Log
 
-## v0.0.25 (upcoming)
+## v0.0.25
 
  - pass `ignored` to adapter to bypass unnecessary files to save time 
+ - by default minimize javascript and css in pug filter.
 
 
 ## v0.0.24
