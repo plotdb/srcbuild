@@ -25,12 +25,12 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
     re = new RegExp("^#{@desdir}/(css|js)/pack/(.+?)(\.min)?\.(css|js)")
     if !(ret = re.exec file) => return null
     return (@config[ret.1][ret.2] or []).0
-  build: (files) ->
+  build: (files, force = false) ->
     if files.filter(~> it.file == @config-file).length =>
       @prepare-config!
-      files = Array.from(@file-list)
+      files = Array.from(@file-list).map(->{file: it})
       files.splice files.indexOf(@config-file), 1
-      return @build files
+      return @build files, true
     dirty = {}
     for file in files =>
       if !(ret = @file-map[file.file]) => continue
@@ -39,7 +39,7 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
     for type of dirty => for name of dirty[type] =>
       desdir = path.join(@desdir, type, 'pack')
       des = path.join(desdir, "#name.#type")
-      if aux.newer des, ((@config[type][name] or []) ++ [@config-file]) => continue
+      if !force and aux.newer(des, ((@config[type][name] or []) ++ [@config-file])) => continue
       ps.push @build-by-name({type, name})
     Promise.all ps
 
@@ -87,6 +87,9 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
         @log.info "bundle #desdir/#name.#type ( #size bytes / #{elapsed}ms )"
         @log.info "bundle #desdir/#name.min.#type ( #size-min bytes / #{elapsed}ms )"
         ret
+      .catch (e) ~>
+        @log.error "#des failed: ".red
+        @log.error e.message.toString!
 
   purge: (files) -> @build files
 

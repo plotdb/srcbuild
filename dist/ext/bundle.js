@@ -61,15 +61,20 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
     }
     return (this.config[ret[1]][ret[2]] || [])[0];
   },
-  build: function(files){
+  build: function(files, force){
     var dirty, i$, len$, file, ret, key$, ps, type, name, desdir, des, this$ = this;
+    force == null && (force = false);
     if (files.filter(function(it){
       return it.file === this$.configFile;
     }).length) {
       this.prepareConfig();
-      files = Array.from(this.fileList);
+      files = Array.from(this.fileList).map(function(it){
+        return {
+          file: it
+        };
+      });
       files.splice(files.indexOf(this.configFile), 1);
-      return this.build(files);
+      return this.build(files, true);
     }
     dirty = {};
     for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
@@ -84,7 +89,7 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
       for (name in dirty[type]) {
         desdir = path.join(this.desdir, type, 'pack');
         des = path.join(desdir, name + "." + type);
-        if (aux.newer(des, (this.config[type][name] || []).concat([this.configFile]))) {
+        if (!force && aux.newer(des, (this.config[type][name] || []).concat([this.configFile]))) {
           continue;
         }
         ps.push(this.buildByName({
@@ -192,6 +197,9 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
         this$.log.info("bundle " + desdir + "/" + name + "." + type + " ( " + size + " bytes / " + elapsed + "ms )");
         this$.log.info("bundle " + desdir + "/" + name + ".min." + type + " ( " + sizeMin + " bytes / " + elapsed + "ms )");
         return ret;
+      })['catch'](function(e){
+        this$.log.error((des + " failed: ").red);
+        return this$.log.error(e.message.toString());
       });
     });
   },

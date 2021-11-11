@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.29
+
+ - bug fix: bundle not rebuild when bundle config file updated
+ - bug fix: bundler exception not caught
+
+
 ## v0.0.28
 
  - totally remove `compress` option to prevent unwanted side effect of code removal
