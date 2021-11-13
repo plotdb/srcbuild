@@ -59,6 +59,24 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           }
           args = res$;
           return this$.pugResolve.apply(this$, args);
+        },
+        postParse: function(dom, opt){
+          if (dom.nodes[0].type !== 'Doctype') {
+            return dom;
+          }
+          dom.nodes.splice(1, 0, {
+            type: 'Include',
+            block: {
+              type: 'Block',
+              nodes: []
+            },
+            file: {
+              type: 'FileReference',
+              filename: opt.filename,
+              path: '@/@plotdb/srcbuild/dist/lib.pug'
+            }
+          });
+          return dom;
         }
       }],
       filters: {
@@ -205,7 +223,6 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             continue;
           }
           code = fs.readFileSync(src).toString();
-          code = "include @/@plotdb/srcbuild/dist/lib.pug\n" + code;
           try {
             t1 = Date.now();
             if (/^\/\/- ?module ?/.exec(code)) {

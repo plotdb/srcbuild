@@ -23,7 +23,16 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   get-extapi: ->
     ret = do
-      plugins: [{resolve: (...args) ~> @pug-resolve.apply @, args}]
+      plugins: [{
+        resolve: (...args) ~> @pug-resolve.apply @, args
+        postParse: (dom, opt) ->
+          if dom.nodes.0.type != \Doctype => return dom
+          dom.nodes.splice 1, 0 {
+            type: \Include, block: { type: 'Block', nodes: [] }
+            file: {type: \FileReference, filename: opt.filename, path: '@/@plotdb/srcbuild/dist/lib.pug'}
+          }
+          return dom
+      }]
       filters: do
         'lsc': (text, opt) ->
           code = livescript.compile(text,{bare:true,header:false})
@@ -105,7 +114,6 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           {src, desh, desv} = @map file, intl
           if !fs.exists-sync(src) or aux.newer(desv, mtime) => continue
           code = fs.read-file-sync src .toString!
-          code = "include @/@plotdb/srcbuild/dist/lib.pug\n#code"
           try
             t1 = Date.now!
             if /^\/\/- ?module ?/.exec(code) => continue

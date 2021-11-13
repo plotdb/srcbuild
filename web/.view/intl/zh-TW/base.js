@@ -5,9 +5,7 @@ function pug_rethrow(e,n,r,t){if(!(e instanceof Error))throw e;if(!("undefined"=
     var locals_for_with = (locals || {});
     
     (function (libLoader, version) {
-      ;pug_debug_line = 1;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fa.pug";
-pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
-;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+      ;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
 if(!libLoader) {
   libLoader = {
     js: {url: {}},
@@ -96,111 +94,16 @@ if(!libLoader) {
 
 
 
-;pug_debug_line = 2;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fa.pug";
-pug_html = pug_html + "\u003Chtml\u003E";
-;pug_debug_line = 3;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fa.pug";
-pug_html = pug_html + "\u003Chead\u003E\u003C\u002Fhead\u003E";
-;pug_debug_line = 4;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fa.pug";
-pug_html = pug_html + "\u003Cbody\u003E";
-;pug_debug_line = 1;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fweb\u002Fsrc\u002Fpug\u002Fb.pug";
+;pug_debug_line = 3;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fbase.pug";
 pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
-;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
-if(!libLoader) {
-  libLoader = {
-    js: {url: {}},
-    css: {url: {}},
-    root: function(r) { this._root = r; },
-    _r: "/assets/lib",
-    _v: "",
-    version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }
-  }
-  if(version) { libLoader.version(version); }
-}
-
-;pug_debug_line = 15;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;pug_debug_line = 30;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fweb\u002Fsrc\u002Fpug\u002Fb.pug";
+;pug_debug_line = 4;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fbase.pug";
 pug_html = pug_html + "\u003Chtml\u003E";
-;pug_debug_line = 3;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fweb\u002Fsrc\u002Fpug\u002Fb.pug";
+;pug_debug_line = 5;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fbase.pug";
 pug_html = pug_html + "\u003Chead\u003E\u003C\u002Fhead\u003E";
-;pug_debug_line = 4;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fweb\u002Fsrc\u002Fpug\u002Fb.pug";
+;pug_debug_line = 6;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fbase.pug";
 pug_html = pug_html + "\u003Cbody\u003E";
-;pug_debug_line = 5;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fweb\u002Fsrc\u002Fpug\u002Fb.pug";
-pug_html = pug_html + "var a,b;a=1;b=function(){return console.log(\"c\")};\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
+;pug_debug_line = 7;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Fbase.pug";
+pug_html = pug_html + "\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
     }.call(this, "libLoader" in locals_for_with ?
         locals_for_with.libLoader :
         typeof libLoader !== 'undefined' ? libLoader : undefined, "version" in locals_for_with ?

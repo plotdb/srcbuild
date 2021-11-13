@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.31
+
+ - bug fix: the `script` and `css` mixin supports should be done by `postParse` plugin instead of code modification.
+
+
 ## v0.0.30
 
  - directly support `script` and `css` mixin in pug compiling.
