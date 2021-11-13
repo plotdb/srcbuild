@@ -105,6 +105,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           {src, desh, desv} = @map file, intl
           if !fs.exists-sync(src) or aux.newer(desv, mtime) => continue
           code = fs.read-file-sync src .toString!
+          code = "include @/@plotdb/srcbuild/dist/lib.pug\n#code"
           try
             t1 = Date.now!
             if /^\/\/- ?module ?/.exec(code) => continue

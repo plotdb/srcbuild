@@ -205,6 +205,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             continue;
           }
           code = fs.readFileSync(src).toString();
+          code = "include @/@plotdb/srcbuild/dist/lib.pug\n" + code;
           try {
             t1 = Date.now();
             if (/^\/\/- ?module ?/.exec(code)) {

@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.30
+
+ - directly support `script` and `css` mixin in pug compiling.
+
+
 ## v0.0.29
 
  - bug fix: bundle not rebuild when bundle config file updated

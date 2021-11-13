@@ -1,0 +1,40 @@
+//- module
+-
+  if(!libLoader) {
+    libLoader = {
+      js: {url: {}},
+      css: {url: {}},
+      root: function(r) { this._root = r; },
+      _r: "/assets/lib",
+      _v: "",
+      version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }
+    }
+    if(version) { libLoader.version(version); }
+  }
+
+mixin script(os)
+  -
+    if(!Array.isArray(os)) { os = [os]; }
+  each o in os
+    -
+      if(typeof(o) == "string") { url = o; }
+      else if(o.url) { url = o.url; }
+      else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.js"); }
+    if !libLoader.js.url[url]
+      - libLoader.js.url[url] = true;
+      if /^https?:\/\/./.exec(url)
+        script(type="text/javascript",src=url, defer=!!o.defer, async=!!o.async)
+      else
+        script(type="text/javascript",src=url + libLoader._v, defer=!!o.defer, async=!!o.async)
+
+mixin css(os)
+  -
+    if(!Array.isArray(os)) { os = [os]; }
+  each o in os
+    -
+      if(typeof(o) == "string") { url = o; }
+      else if(o.url) { url = o.url; }
+      else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.css"); }
+    if !libLoader.css.url[url]
+      - libLoader.css.url[url] = true;
+      link(rel="stylesheet",type="text/css",href=url + libLoader._v)

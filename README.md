@@ -186,6 +186,36 @@ Use `@static` to include files under `static` folder:
 Other paths starting with `@` are reserved and will cause error when used.
 
 
+### Mixins
+
+use `script` and `css` builtin mixins to load external script and css files:
+
+    +script({name: "module-name", version: "main", path: "somefile.js"})
+    +css({name: "module-name", version: "main", path: "somefile.js"})
+
+where the fields of the parameters:
+
+ - `name`: module name
+ - `version`: module version. default `main`, if omitted.
+ - `path`: path of file to load. default `index.min.js`, if omitted.
+ - `defer`: defer execution or not. default `true` if omitted.
+ - `async`: async loading or not. default `false` if omitted.
+
+By default the above script mixin generates a script tag pointing to files under `/assets/lib/<name>/<version>/<path>`. You can customize the `/assets/lib/` by calling `libLoader.root(desiredPath)`.
+
+
+Additionally, you can also use a list of modules:
+
+    +script([
+      {name: "module-a", version: "0.0.1", path: "somefile.js"},
+      {name: "module-b", version: "0.2.1", path: "another.js"},
+      {name: "module-c", path: "with-default-version.js"},
+      {name: "module-d", version: "with.default.path" },
+      {name: "with-defer-async", defer: false, async: true}
+      {name: "omit-everything"},
+    ])
+
+
 ### Filters
 
 Following formats and filters are supported:

@@ -11,27 +11,112 @@ function pug_rethrow(e,n,r,t){if(!(e instanceof Error))throw e;if(!("undefined"=
 function pug_style(r){if(!r)return"";if("object"==typeof r){var t="";for(var e in r)pug_has_own_property.call(r,e)&&(t=t+e+":"+r[e]+";");return t}return r+""}function template(locals) {var pug_html = "", pug_mixins = {}, pug_interp;var pug_debug_filename, pug_debug_line;try {;
     var locals_for_with = (locals || {});
     
-    (function (Array, parentName, prefix, yaml) {
-      ;pug_debug_line = 1;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
+    (function (Array, libLoader, parentName, prefix, url, version, yaml) {
+      ;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if(!libLoader) {
+  libLoader = {
+    js: {url: {}},
+    css: {url: {}},
+    root: function(r) { this._root = r; },
+    _r: "/assets/lib",
+    _v: "",
+    version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }
+  }
+  if(version) { libLoader.version(version); }
+}
+
+;pug_debug_line = 15;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+pug_mixins["script"] = pug_interp = function(os){
+var block = (this && this.block), attributes = (this && this.attributes) || {};
+;pug_debug_line = 16;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if(!Array.isArray(os)) { os = [os]; }
+;pug_debug_line = 18;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+// iterate os
+;(function(){
+  var $$obj = os;
+  if ('number' == typeof $$obj.length) {
+      for (var pug_index0 = 0, $$l = $$obj.length; pug_index0 < $$l; pug_index0++) {
+        var o = $$obj[pug_index0];
+;pug_debug_line = 19;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if(typeof(o) == "string") { url = o; }
+else if(o.url) { url = o.url; }
+else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.js"); }
+;pug_debug_line = 23;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if (!libLoader.js.url[url]) {
+;pug_debug_line = 24;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+libLoader.js.url[url] = true;
+;pug_debug_line = 25;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if (/^https?:\/\/./.exec(url)) {
+;pug_debug_line = 26;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url, true, true)+pug_attr("defer", !!o.defer, true, true)+pug_attr("async", !!o.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
+else {
+;pug_debug_line = 28;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url + libLoader._v, true, true)+pug_attr("defer", !!o.defer, true, true)+pug_attr("async", !!o.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
+}
+      }
+  } else {
+    var $$l = 0;
+    for (var pug_index0 in $$obj) {
+      $$l++;
+      var o = $$obj[pug_index0];
+;pug_debug_line = 19;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if(typeof(o) == "string") { url = o; }
+else if(o.url) { url = o.url; }
+else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.js"); }
+;pug_debug_line = 23;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if (!libLoader.js.url[url]) {
+;pug_debug_line = 24;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+libLoader.js.url[url] = true;
+;pug_debug_line = 25;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+if (/^https?:\/\/./.exec(url)) {
+;pug_debug_line = 26;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url, true, true)+pug_attr("defer", !!o.defer, true, true)+pug_attr("async", !!o.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
+else {
+;pug_debug_line = 28;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url + libLoader._v, true, true)+pug_attr("defer", !!o.defer, true, true)+pug_attr("async", !!o.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
+}
+    }
+  }
+}).call(this);
+
+};
+;pug_debug_line = 30;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+
+
+
+
+
+
+
+
+
+
+
+
 ;pug_debug_line = 2;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003Chtml\u003E";
+pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
 ;pug_debug_line = 3;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_html = pug_html + "\u003Chtml\u003E";
+;pug_debug_line = 4;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Chead\u003E";
-;pug_debug_line = 4;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 5;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Cstyle type=\"text\u002Fcss\"\u003E";
-;pug_debug_line = 4;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 5;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "html,body{width:100%;height:100%}h1{color:red}\u003C\u002Fstyle\u003E\u003C\u002Fhead\u003E";
-;pug_debug_line = 7;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 8;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Cbody\u003E";
-;pug_debug_line = 8;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003Ch1\u003E";
-;pug_debug_line = 8;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "hi\u003C\u002Fh1\u003E";
 ;pug_debug_line = 9;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003Cscript\u003E";
+pug_html = pug_html + "\u003Ch1\u003E";
+;pug_debug_line = 9;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_html = pug_html + "hi\u003C\u002Fh1\u003E";
 ;pug_debug_line = 10;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "var a=1,b=function(){return console.log(\"c\")};";
+pug_html = pug_html + "\u003Cscript\u003E";
+;pug_debug_line = 11;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_html = pug_html + "var a,b;a=1;b=function(){return console.log(\"c\")};";
 ;pug_debug_line = 1;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002Fldview\u002Fdist\u002Fldview.pug";
 prefix = function(n) { return (!n?[]:(Array.isArray(n)?n:[n])).map(function(it){ return `${prefix.currentName}$${it}`; }).join(' ');}
 ;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002Fldview\u002Fdist\u002Fldview.pug";
@@ -57,25 +142,39 @@ pug_html = pug_html + "\u003C\u002Fdiv\u003E";
 prefix.currentName = parentName;
 };
 pug_html = pug_html + "\u003C\u002Fscript\u003E";
-;pug_debug_line = 12;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 13;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_mixins["scope"].call({
 block: function(){
-;pug_debug_line = 13;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 14;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Cdiv\u003E";
-;pug_debug_line = 13;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 14;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "hi\u003C\u002Fdiv\u003E";
 }
 }, "123");
-;pug_debug_line = 14;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 15;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 yaml("web/src/pug/sample.yaml")
+
+;pug_debug_line = 18;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_mixins["script"]([
+      { name: "ldview" },
+      { name: "ldcolor" },
+      { name: "ldcover" },
+      { name: "ldloader" }
+    ]);
 pug_html = pug_html + "\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
     }.call(this, "Array" in locals_for_with ?
         locals_for_with.Array :
-        typeof Array !== 'undefined' ? Array : undefined, "parentName" in locals_for_with ?
+        typeof Array !== 'undefined' ? Array : undefined, "libLoader" in locals_for_with ?
+        locals_for_with.libLoader :
+        typeof libLoader !== 'undefined' ? libLoader : undefined, "parentName" in locals_for_with ?
         locals_for_with.parentName :
         typeof parentName !== 'undefined' ? parentName : undefined, "prefix" in locals_for_with ?
         locals_for_with.prefix :
-        typeof prefix !== 'undefined' ? prefix : undefined, "yaml" in locals_for_with ?
+        typeof prefix !== 'undefined' ? prefix : undefined, "url" in locals_for_with ?
+        locals_for_with.url :
+        typeof url !== 'undefined' ? url : undefined, "version" in locals_for_with ?
+        locals_for_with.version :
+        typeof version !== 'undefined' ? version : undefined, "yaml" in locals_for_with ?
         locals_for_with.yaml :
         typeof yaml !== 'undefined' ? yaml : undefined));
     ;} catch (err) {pug_rethrow(err, pug_debug_filename, pug_debug_line);};return pug_html;}; module.exports = template; })() 
