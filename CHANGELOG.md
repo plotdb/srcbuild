@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.0.33
+
+ - support relative path in bundle.json
+ - add test case for bundler
+ - use local script for testing
+
+
 ## v0.0.32
 
  - bug fix: `defer` in libLoader should be by default true.

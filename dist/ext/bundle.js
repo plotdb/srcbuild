@@ -16,6 +16,11 @@ bundlebuild = function(opt){
     js: {}
   };
   this.configFile = opt.configFile || null;
+  this._relativePath = !(opt.relativePath != null)
+    ? false
+    : typeof opt.relativePath === 'string'
+      ? opt.relativePath
+      : this.configFile ? path.dirname(this.configFile) : false;
   this.prepareConfig();
   return this.init(import$({
     srcdir: 'static',
@@ -24,9 +29,17 @@ bundlebuild = function(opt){
 };
 bundlebuild.prototype = import$(Object.create(base.prototype), {
   prepareConfig: function(){
-    var type, name, ref$, list, i$, len$, f;
+    var type, name, ref$, list, i$, len$, f, this$ = this;
     if (this.configFile && fs.existsSync(this.configFile)) {
       this.config = JSON.parse(fs.readFileSync(this.configFile).toString());
+    }
+    if (typeof this._relativePath === 'string') {
+      for (type in this.config) {
+        for (name in ref$ = this.config[type]) {
+          list = ref$[name];
+          this.config[type][name] = list.map(fn$);
+        }
+      }
     }
     this.fileList = new Set();
     this.fileMap = {};
@@ -44,6 +57,9 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
       }
     }
     return this.fileList.add(this.configFile);
+    function fn$(f){
+      return path.join(this$._relativePath, f);
+    }
   },
   getDependencies: function(file){
     return file === this.configFile

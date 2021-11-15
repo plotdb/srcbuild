@@ -97,6 +97,10 @@ Except common options, each builder may support different options:
      - *NOTE* this is an experiment feature and may be removed ( move to standalone builder ) in the future.
  - `bundle`: bundle options. includes:
    - `configFile`: json file storing bundle configuration. optional.
+   - `relativePath`: use relative path for paths in config file. default false. possible values:
+     - `false`: all files in `configFile` are relative to current working directory.
+     - `true`: all files in `configFile` are relative to the directory containing `bundle.json`
+     - or, specific a path as the relative root.
    - `config`: bundle configuration in following format:
      {
        "css": {

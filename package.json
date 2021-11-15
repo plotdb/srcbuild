@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "description": "",
   "main": "./dist/main.js",
   "files": [
@@ -12,7 +12,7 @@
     "srcbuild-pug": "./dist/pug-cli"
   },
   "scripts": {
-    "start": "./dist/cli"
+    "start": "./node_modules/.bin/lsc watch.ls"
   },
   "license": "MIT",
   "homepage": "https://github.com/plotdb/srcbuild",

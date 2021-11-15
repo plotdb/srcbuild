@@ -5,6 +5,10 @@ require! <[./base ../aux ../adapter]>
 bundlebuild = (opt={}) ->
   @config = opt.config or {css: {}, js: {}}
   @config-file = opt.config-file or null #'bundle.json'
+  @_relative-path = if !(opt.relative-path?) => false
+  else if typeof(opt.relative-path) == \string => opt.relative-path
+  else if @config-file => path.dirname(@config-file)
+  else false
   @prepare-config!
   @init({srcdir: 'static', desdir: 'static'} <<< opt)
 
@@ -12,6 +16,9 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
   prepare-config: ->
     if @config-file and fs.exists-sync(@config-file) =>
       @config = JSON.parse fs.read-file-sync(@config-file).toString!
+    if typeof(@_relative-path) == \string =>
+      for type of @config => for name, list of @config[type] =>
+        @config[type][name] = list.map (f) ~> path.join(@_relative-path, f)
     @file-list = new Set!
     @file-map = {}
     for type of @config => for name,list of @config[type] => for f in list =>
