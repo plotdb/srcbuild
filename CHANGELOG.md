@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.32
+
+ - bug fix: `defer` in libLoader should be by default true.
+ - bug fix: stylus extension doesn't provide correct path for dependencies.
+
+
 ## v0.0.31
 
  - bug fix: the `script` and `css` mixin supports should be done by `postParse` plugin instead of code modification.

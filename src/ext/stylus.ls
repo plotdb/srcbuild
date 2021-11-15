@@ -10,7 +10,7 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
       .map -> /\s*(@import)\s+(.+)$/.exec(it)
       .filter -> it
       .map -> it.2.replace(/'/g, '').replace(/(\.styl)?$/, '.styl')
-      .map -> it
+      .map ~> path.join(@srcdir,it)
     root = path.resolve('.') + '/'
     return (ret or []).map ~> it.replace(root, '')
   is-supported: (file) -> /\.styl$/.exec(file) and file.startsWith(@srcdir)

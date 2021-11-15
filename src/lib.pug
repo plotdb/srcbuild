@@ -22,10 +22,11 @@ mixin script(os)
       else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.js"); }
     if !libLoader.js.url[url]
       - libLoader.js.url[url] = true;
+      - defer = (typeof(o.defer) == "undefined" ? true : !!o.defer);
       if /^https?:\/\/./.exec(url)
-        script(type="text/javascript",src=url, defer=!!o.defer, async=!!o.async)
+        script(type="text/javascript",src=url, defer=defer, async=!!o.async)
       else
-        script(type="text/javascript",src=url + libLoader._v, defer=!!o.defer, async=!!o.async)
+        script(type="text/javascript",src=url + libLoader._v, defer=defer, async=!!o.async)
 
 mixin css(os)
   -
