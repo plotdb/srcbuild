@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.34 (upcoming)
+
+ - support legacy syntax in libLoader for script loading
+
+
 ## v0.0.33
 
  - support relative path in bundle.json

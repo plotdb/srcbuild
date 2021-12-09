@@ -12,28 +12,30 @@
     if(version) { libLoader.version(version); }
   }
 
-mixin script(os)
+mixin script(os,cfg)
   -
     if(!Array.isArray(os)) { os = [os]; }
   each o in os
     -
-      if(typeof(o) == "string") { url = o; }
+      c = o;
+      if(typeof(o) == "string") { url = o; c = cfg || {};}
       else if(o.url) { url = o.url; }
       else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.js"); }
     if !libLoader.js.url[url]
       - libLoader.js.url[url] = true;
-      - defer = (typeof(o.defer) == "undefined" ? true : !!o.defer);
+      - defer = (typeof(c.defer) == "undefined" ? true : !!c.defer);
       if /^https?:\/\/./.exec(url)
-        script(type="text/javascript",src=url, defer=defer, async=!!o.async)
+        script(type="text/javascript",src=url, defer=defer, async=!!c.async)
       else
-        script(type="text/javascript",src=url + libLoader._v, defer=defer, async=!!o.async)
+        script(type="text/javascript",src=url + libLoader._v, defer=defer, async=!!c.async)
 
-mixin css(os)
+mixin css(os,cfg)
   -
     if(!Array.isArray(os)) { os = [os]; }
   each o in os
     -
-      if(typeof(o) == "string") { url = o; }
+      c = o;
+      if(typeof(o) == "string") { url = o; c = cfg || {};}
       else if(o.url) { url = o.url; }
       else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.css"); }
     if !libLoader.css.url[url]
