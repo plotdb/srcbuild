@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "",
   "main": "./dist/main.js",
   "files": [

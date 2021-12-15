@@ -4,7 +4,7 @@
     libLoader = {
       js: {url: {}},
       css: {url: {}},
-      root: function(r) { this._root = r; },
+      root: function(r) { libLoader._r = r; },
       _r: "/assets/lib",
       _v: "",
       version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }

@@ -1,8 +1,9 @@
 # Change Log
 
-## v0.0.34 (upcoming)
+## v0.0.34
 
  - support legacy syntax in libLoader for script loading
+ - fix bug: `libLoader.root` doesn't work properly
 
 
 ## v0.0.33
