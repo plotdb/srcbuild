@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.37
+
+ - bug fix: crash when iterating to a symlink pointing to a non-existed file.
+
+
 ## v0.0.36
 
  - use `@plotdb/colors` to replace `colors`

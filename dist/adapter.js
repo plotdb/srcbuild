@@ -142,14 +142,20 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     var mtimes, recurse, this$ = this;
     mtimes = {};
     recurse = function(file){
-      var that;
+      var that, stat, e;
       if (that = mtimes[file]) {
         return that;
       }
       if (!fs.existsSync(file)) {
         return 0;
       }
-      return mtimes[file] = Math.max.apply(Math, [+fs.statSync(file).mtime].concat(Array.from(this$.depends.by[file] || []).map(function(f){
+      try {
+        stat = fs.statSync(file);
+      } catch (e$) {
+        e = e$;
+        return 0;
+      }
+      return mtimes[file] = Math.max.apply(Math, [+stat.mtime].concat(Array.from(this$.depends.by[file] || []).map(function(f){
         return recurse(f);
       })));
     };
@@ -164,7 +170,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     var initBuilds, recurse, t1, this$ = this;
     initBuilds = [];
     recurse = function(root){
-      var len1, len2, files, i$, len$, file, e, results$ = [];
+      var len1, len2, files, i$, len$, file, stat, e, results$ = [];
       if (!fs.existsSync(root)) {
         return;
       }
@@ -179,7 +185,13 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       });
       for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
         file = files[i$];
-        if (fs.statSync(file).isDirectory()) {
+        try {
+          stat = fs.statSync(file);
+        } catch (e$) {
+          e = e$;
+          continue;
+        }
+        if (stat.isDirectory()) {
           recurse(file);
         }
         if (!this$.isSupported(file)) {

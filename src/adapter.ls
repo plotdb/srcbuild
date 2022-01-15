@@ -69,8 +69,12 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     recurse = (file) ~>
       if mtimes[file] => return that
       if !fs.exists-sync(file) => return 0
+      try
+        stat = fs.stat-sync(file)
+      catch e # file exists, but stat-sync fails - it may be a symlink pointing to a non-existed file.
+        return 0
       return mtimes[file] = Math.max.apply( Math,
-        [+fs.stat-sync(file).mtime] ++ Array.from(@depends.by[file] or []).map((f) -> recurse f)
+        [+stat.mtime] ++ Array.from(@depends.by[file] or []).map((f) -> recurse f)
       )
     @build files.map((file) -> {file, mtime: recurse(file)})
 
@@ -84,7 +88,11 @@ adapter.prototype = Object.create(Object.prototype) <<< do
         .filter ~> !anymatch((@ignored or []), it)
         .map -> path.normalize("#root/#it")
       for file in files =>
-        if fs.stat-sync file .is-directory! => recurse file
+        try
+          stat = fs.stat-sync(file)
+        catch e # file exists, but stat-sync fails - it may be a symlink pointing to a non-existed file.
+          continue
+        if stat.is-directory! => recurse file
         if !@is-supported(file) => continue
         # this is a time consuming func call. consider ODB instead.
         # on error: simply ignore. builder will take care of it.
