@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "",
   "main": "./dist/main.js",
   "files": [
@@ -12,6 +12,7 @@
     "srcbuild-pug": "./dist/pug-cli"
   },
   "scripts": {
+    "prepare": "mkdir -p ./node_modules/@plotdb/srcbuild/dist; cp dist/lib.pug ./node_modules/@plotdb/srcbuild/dist/",
     "start": "./node_modules/.bin/lsc watch.ls"
   },
   "license": "MIT",
@@ -37,7 +38,7 @@
     "i18next-http-middleware": "^3.1.0",
     "js-yaml": "^4.0.0",
     "livescript": "^1.6.0",
-    "marked": "^2.0.1",
+    "marked": "^4.0.10",
     "pug": "^3.0.2",
     "require-reload": "^0.2.2",
     "stylus": "^0.55.0",

@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.35
+
+ - upgrade marked for vulnerability fixing
+
+
 ## v0.0.34
 
  - support legacy syntax in libLoader for script loading

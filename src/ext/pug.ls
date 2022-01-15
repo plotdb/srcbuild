@@ -50,9 +50,9 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               return new stylus.nodes.Unit(a.indexOf b.val)
             .render!
           code-min = uglifycss.processString(code, uglyComments: true)
-        'md': (text, opt) -> marked text
+        'md': (text, opt) -> marked.parse text
       json: -> JSON.parse(fs.read-file-sync it)
-      md: marked
+      md: marked.parse
       yaml: -> js-yaml.load fs.read-file-sync it
       yamls: (dir) ~>
         ret = fs.readdir-sync dir

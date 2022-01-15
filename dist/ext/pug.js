@@ -109,13 +109,13 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           });
         },
         'md': function(text, opt){
-          return marked(text);
+          return marked.parse(text);
         }
       },
       json: function(it){
         return JSON.parse(fs.readFileSync(it));
       },
-      md: marked,
+      md: marked.parse,
       yaml: function(it){
         return jsYaml.load(fs.readFileSync(it));
       },
