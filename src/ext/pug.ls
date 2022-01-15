@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked colors]>
+require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked @plotdb/colors]>
 require! <[./base ../aux]>
 
 pugbuild = (opt={}) ->

@@ -1,4 +1,4 @@
-require! <[fs path fs-extra stylus uglifycss colors]>
+require! <[fs path fs-extra stylus uglifycss @plotdb/colors]>
 require! <[./base ../aux ../adapter]>
 
 stylusbuild = (opt={}) -> @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)

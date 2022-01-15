@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.36
+
+ - use `@plotdb/colors` to replace `colors`
+
+
 ## v0.0.35
 
  - upgrade marked for vulnerability fixing

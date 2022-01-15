@@ -1,4 +1,4 @@
-require! <[fs colors]>
+require! <[fs @plotdb/colors]>
 aux = do
   # is f1 newer than any file in files?
   # or, is f1 newer than files ( as timestamp )?

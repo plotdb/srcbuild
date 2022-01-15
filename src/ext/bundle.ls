@@ -1,4 +1,4 @@
-require! <[fs path fs-extra uglify-js uglifycss colors]>
+require! <[fs path fs-extra uglify-js uglifycss @plotdb/colors]>
 require! <[./base ../aux ../adapter]>
 
 

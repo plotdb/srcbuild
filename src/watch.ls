@@ -1,4 +1,4 @@
-require! <[fs path fs-extra chokidar colors @loadingio/debounce.js ./aux]>
+require! <[fs path fs-extra chokidar @plotdb/colors @loadingio/debounce.js ./aux]>
 
 watch = (opt={}) ->
   @opt = opt

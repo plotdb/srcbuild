@@ -1,4 +1,4 @@
-require! <[fs path stream fs-extra livescript uglify-js colors]>
+require! <[fs path stream fs-extra livescript uglify-js @plotdb/colors]>
 require! <[./base ../aux ../adapter]>
 
 glslify = null
