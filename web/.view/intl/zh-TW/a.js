@@ -12,7 +12,7 @@ if(!libLoader) {
   libLoader = {
     js: {url: {}},
     css: {url: {}},
-    root: function(r) { this._root = r; },
+    root: function(r) { libLoader._r = r; },
     _r: "/assets/lib",
     _v: "",
     version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }
@@ -69,7 +69,7 @@ if(!libLoader) {
 
 
 
-;pug_debug_line = 31;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+;pug_debug_line = 32;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
 
 
 
@@ -113,7 +113,7 @@ if(!libLoader) {
   libLoader = {
     js: {url: {}},
     css: {url: {}},
-    root: function(r) { this._root = r; },
+    root: function(r) { libLoader._r = r; },
     _r: "/assets/lib",
     _v: "",
     version: function(v) { libLoader._v = (v ? "?v=" + v : ""); }
@@ -170,7 +170,7 @@ if(!libLoader) {
 
 
 
-;pug_debug_line = 31;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
+;pug_debug_line = 32;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
 
 
 
