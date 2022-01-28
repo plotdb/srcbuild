@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.38 (upcoming)
+
+ - upgrade @loadingio/debounce.js
+ - audit and fix cached-path-relative vulnerability
+
+
 ## v0.0.37
 
  - bug fix: crash when iterating to a symlink pointing to a non-existed file.
