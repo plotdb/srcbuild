@@ -1,8 +1,9 @@
 # Change Log
 
-## v0.0.38 (upcoming)
+## v0.0.38
 
  - upgrade @loadingio/debounce.js
+ - tweak dependency range syntax
  - audit and fix cached-path-relative vulnerability
 
 
