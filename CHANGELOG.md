@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.39
+
+ - bug fix: pug build fails when pug file is empty
+
+
 ## v0.0.38
 
  - upgrade @loadingio/debounce.js

@@ -26,7 +26,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       plugins: [{
         resolve: (...args) ~> @pug-resolve.apply @, args
         postParse: (dom, opt) ->
-          if dom.nodes.0.type != \Doctype => return dom
+          if !(dom.nodes.0 and dom.nodes.0.type == \Doctype) => return dom
           dom.nodes.splice 1, 0 {
             type: \Include, block: { type: 'Block', nodes: [] }
             file: {type: \FileReference, filename: opt.filename, path: '@/@plotdb/srcbuild/dist/lib.pug'}

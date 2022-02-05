@@ -61,7 +61,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           return this$.pugResolve.apply(this$, args);
         },
         postParse: function(dom, opt){
-          if (dom.nodes[0].type !== 'Doctype') {
+          if (!(dom.nodes[0] && dom.nodes[0].type === 'Doctype')) {
             return dom;
           }
           dom.nodes.splice(1, 0, {
