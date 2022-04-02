@@ -4,6 +4,7 @@ require! <[./base ../aux]>
 pugbuild = (opt={}) ->
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
+  @filters = opt.filters or {}
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
@@ -33,7 +34,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           }
           return dom
       }]
-      filters: do
+      filters: (@filters or {}) <<< do
         'lsc': (text, opt) ->
           code = livescript.compile(text,{bare:true,header:false})
           # we may need an option to turn off uglify-js but for now we will enable it by default.

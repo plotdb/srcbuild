@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.40
+
+ - support custom filter in ext/pug
+
+
 ## v0.0.39
 
  - bug fix: pug build fails when pug file is empty

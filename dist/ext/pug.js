@@ -17,6 +17,7 @@ pugbuild = function(opt){
   opt == null && (opt = {});
   this.i18n = opt.i18n || null;
   this.intlbase = opt.intlbase || 'intl';
+  this.filters = opt.filters || {};
   this.extapi = this.getExtapi();
   this.init(import$({
     srcdir: 'src/pug',
@@ -79,7 +80,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           return dom;
         }
       }],
-      filters: {
+      filters: import$(this.filters || {}, {
         'lsc': function(text, opt){
           var code, codeMin;
           code = livescript.compile(text, {
@@ -111,7 +112,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         'md': function(text, opt){
           return marked.parse(text);
         }
-      },
+      }),
       json: function(it){
         return JSON.parse(fs.readFileSync(it));
       },
