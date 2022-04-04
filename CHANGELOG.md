@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.41
+
+ - fix bug: pug view engine doesn't support `filters` option
+
+
 ## v0.0.40
 
  - support custom filter in ext/pug

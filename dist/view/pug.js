@@ -15,7 +15,8 @@ pugViewEngine = function(options){
     viewdir: options.viewdir,
     srcdir: options.srcdir,
     desdir: options.desdir,
-    base: options.base
+    base: options.base,
+    filters: options.filters
   };
   for (k in opt) {
     v = opt[k];

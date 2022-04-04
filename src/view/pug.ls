@@ -4,7 +4,7 @@ reload = require("require-reload")(require)
 fsp = fs.promises
 
 pug-view-engine = (options) ->
-  opt = options{logger, i18n, viewdir, srcdir, desdir, base}
+  opt = options{logger, i18n, viewdir, srcdir, desdir, base, filters}
   for k,v of opt => if !(v?) => delete opt[k]
   builder = new pugbuild opt
   extapi = builder.get-extapi!
