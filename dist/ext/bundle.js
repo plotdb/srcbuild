@@ -29,9 +29,15 @@ bundlebuild = function(opt){
 };
 bundlebuild.prototype = import$(Object.create(base.prototype), {
   prepareConfig: function(){
-    var type, name, ref$, list, i$, len$, f, this$ = this;
+    var e, type, name, ref$, list, i$, len$, f, this$ = this;
     if (this.configFile && fs.existsSync(this.configFile)) {
-      this.config = JSON.parse(fs.readFileSync(this.configFile).toString());
+      try {
+        this.config = JSON.parse(fs.readFileSync(this.configFile).toString());
+      } catch (e$) {
+        e = e$;
+        (this.log ? this.log : console).error(("bundle failed: parse error of config file " + this.configFile).red);
+        this.config = {};
+      }
     }
     if (typeof this._relativePath === 'string') {
       for (type in this.config) {

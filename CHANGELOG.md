@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.42
+
+ - trap bundle file parsing error and log, instead of crash directly
+
+
 ## v0.0.41
 
  - fix bug: pug view engine doesn't support `filters` option

@@ -15,7 +15,12 @@ bundlebuild = (opt={}) ->
 bundlebuild.prototype = Object.create(base.prototype) <<< do
   prepare-config: ->
     if @config-file and fs.exists-sync(@config-file) =>
-      @config = JSON.parse fs.read-file-sync(@config-file).toString!
+      try
+        @config = JSON.parse fs.read-file-sync(@config-file).toString!
+      catch e
+        (if @log => @log else console).error  "bundle failed: parse error of config file #{@config-file}".red
+        @config = {}
+
     if typeof(@_relative-path) == \string =>
       for type of @config => for name, list of @config[type] =>
         @config[type][name] = list.map (f) ~> path.join(@_relative-path, f)
