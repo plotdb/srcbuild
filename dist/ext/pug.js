@@ -145,21 +145,21 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
       ret.i18n.language = function(){
         return this$.i18n.language;
       };
-      ret.i18n.intlbase = function(p){
+      ret.i18n.intlbase = function(p, lng){
         p == null && (p = "");
-        if (this$.i18n.language) {
-          return path.join(this$.intlbase, this$.i18n.language, p);
-        } else {
+        lng == null && (lng = "");
+        if (!(lng = lng || this$.i18n.language)) {
           return p;
         }
+        return path.join(this$.intlbase, lng, p);
       };
-      ret.intlbase = function(p){
+      ret.intlbase = function(p, lng){
         p == null && (p = "");
-        if (this$.i18n.language) {
-          return path.join(this$.intlbase, this$.i18n.language, p);
-        } else {
+        lng == null && (lng = "");
+        if (!(lng = lng || this$.i18n.language)) {
           return p;
         }
+        return path.join(this$.intlbase, lng, p);
       };
       (ret.filters || (ret.filters = {})).i18n = function(t, o){
         return this$.i18n.t((t || '').trim());

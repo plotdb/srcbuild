@@ -11,7 +11,7 @@ function pug_rethrow(e,n,r,t){if(!(e instanceof Error))throw e;if(!("undefined"=
 function pug_style(r){if(!r)return"";if("object"==typeof r){var t="";for(var e in r)pug_has_own_property.call(r,e)&&(t=t+e+":"+r[e]+";");return t}return r+""}function template(locals) {var pug_html = "", pug_mixins = {}, pug_interp;var pug_debug_filename, pug_debug_line;try {;
     var locals_for_with = (locals || {});
     
-    (function (Array, c, defer, libLoader, parentName, prefix, url, version, yaml) {
+    (function (Array, c, defer, intlbase, libLoader, parentName, prefix, url, version, yaml) {
       ;pug_debug_line = 1;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
 ;pug_debug_line = 2;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002F@plotdb\u002Fsrcbuild\u002Fdist\u002Flib.pug";
@@ -138,8 +138,12 @@ pug_html = pug_html + "\u003Cspan\u003E";
 ;pug_debug_line = 8;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Ch1 id=\"hi\"\u003Ehi\u003C\u002Fh1\u003E\n\u003Cp\u003Ethis is a test of markdown ( by marked ) generation.\u003C\u002Fp\u003E\n\u003C\u002Fspan\u003E";
 ;pug_debug_line = 11;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003Cscript\u003E";
+pug_html = pug_html + "\u003Ca" + (pug_attr("href", intlbase("someurl", "kr"), true, true)) + "\u003E";
+;pug_debug_line = 11;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_html = pug_html + "link to somurl kr version\u003C\u002Fa\u003E";
 ;pug_debug_line = 12;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+pug_html = pug_html + "\u003Cscript\u003E";
+;pug_debug_line = 13;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "var a,b;a=1;b=function(){return console.log(\"c\")};";
 ;pug_debug_line = 1;pug_debug_filename = "\u002FUsers\u002Ftkirby\u002Fworkspace\u002Fzbryikt\u002Fplotdb\u002Fprojects\u002Fsrcbuild\u002Fnode_modules\u002Fldview\u002Fdist\u002Fldview.pug";
 prefix = function(n) { return (!n?[]:(Array.isArray(n)?n:[n])).map(function(it){ return `${prefix.currentName}$${it}`; }).join(' ');}
@@ -166,19 +170,19 @@ pug_html = pug_html + "\u003C\u002Fdiv\u003E";
 prefix.currentName = parentName;
 };
 pug_html = pug_html + "\u003C\u002Fscript\u003E";
-;pug_debug_line = 14;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 15;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_mixins["scope"].call({
 block: function(){
-;pug_debug_line = 15;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 16;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Cdiv\u003E";
-;pug_debug_line = 15;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 16;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "hi\u003C\u002Fdiv\u003E";
 }
 }, "123");
-;pug_debug_line = 16;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 17;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 yaml("web/src/pug/sample.yaml")
 
-;pug_debug_line = 19;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
+;pug_debug_line = 20;pug_debug_filename = "web\u002Fsrc\u002Fpug\u002Findex.pug";
 pug_mixins["script"]([
       { name: "ldview" },
       { name: "ldcolor" },
@@ -192,7 +196,9 @@ pug_html = pug_html + "\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
         locals_for_with.c :
         typeof c !== 'undefined' ? c : undefined, "defer" in locals_for_with ?
         locals_for_with.defer :
-        typeof defer !== 'undefined' ? defer : undefined, "libLoader" in locals_for_with ?
+        typeof defer !== 'undefined' ? defer : undefined, "intlbase" in locals_for_with ?
+        locals_for_with.intlbase :
+        typeof intlbase !== 'undefined' ? intlbase : undefined, "libLoader" in locals_for_with ?
         locals_for_with.libLoader :
         typeof libLoader !== 'undefined' ? libLoader : undefined, "parentName" in locals_for_with ?
         locals_for_with.parentName :

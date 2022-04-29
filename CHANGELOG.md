@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.43
+
+ - support language modifier in `intlbase` API
+
+
 ## v0.0.42
 
  - trap bundle file parsing error and log, instead of crash directly

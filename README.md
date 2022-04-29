@@ -86,7 +86,8 @@ Except common options, each builder may support different options:
        - an additional function `i18n` will be available during pug compilation.
          - `i18n(text)`: translate `text` based on the `i18n` object provided.
          - `language()`: return current language. ( e.g., `zh-TW` )
-         - `intlbase(p)`: return a path to given `p`, based on current i18n setup.
+         - `intlbase(p, lng)`: return a path to given `p`, based on current i18n ( or specified `lng` arg ) setup.
+           - for example, `intlbase('link', 'kr')` may generate `/intl/kr/link`, based on he base dir config.
          - additionally, a pug filter `i18n` is also available, which can be used like:
 
              span:i18n translate this text
