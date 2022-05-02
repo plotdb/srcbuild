@@ -24,6 +24,7 @@ pugbuild = function(opt){
     desdir: 'static'
   }, opt));
   this.viewdir = path.normalize(path.join(this.base, opt.viewdir || '.view'));
+  this._noView = opt.noView || false;
   return this;
 };
 pugbuild.prototype = import$(Object.create(base.prototype), {
@@ -220,7 +221,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
           ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
-          if (!fs.existsSync(src) || aux.newer(desv, mtime)) {
+          if (!fs.existsSync(src) || aux.newer(this$._noView ? desh : desv, mtime)) {
             continue;
           }
           code = fs.readFileSync(src).toString();
@@ -229,17 +230,19 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             if (/^\/\/- ?module ?/.exec(code)) {
               continue;
             }
-            desvdir = path.dirname(desv);
-            fsExtra.ensureDirSync(desvdir);
-            ret = pug.compileClient(code, import$({
-              filename: src,
-              basedir: path.resolve(this$.srcdir),
-              doctype: 'html'
-            }, this$.extapi));
-            ret = " (function() { " + ret + "; module.exports = template; })() ";
-            fs.writeFileSync(desv, ret);
-            t2 = Date.now();
-            this$.log.info(src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
+            if (!this$._noView) {
+              desvdir = path.dirname(desv);
+              fsExtra.ensureDirSync(desvdir);
+              ret = pug.compileClient(code, import$({
+                filename: src,
+                basedir: path.resolve(this$.srcdir),
+                doctype: 'html'
+              }, this$.extapi));
+              ret = " (function() { " + ret + "; module.exports = template; })() ";
+              fs.writeFileSync(desv, ret);
+              t2 = Date.now();
+              this$.log.info(src + " --> " + desv + " ( " + (t2 - t1) + "ms )");
+            }
             if (!/^\/\/- ?view ?/.exec(code)) {
               desdir = path.dirname(desh);
               fsExtra.ensureDirSync(desdir);

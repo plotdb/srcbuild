@@ -91,7 +91,7 @@ Except common options, each builder may support different options:
          - additionally, a pug filter `i18n` is also available, which can be used like:
 
              span:i18n translate this text
-
+   - `noView`: default false. when true, js view files ( generated to `viewdir` ) won't be built.
    - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
  - `lsc`:
    - `useGlslify`: default false. set to true if you need glslify of lsc files.
@@ -111,6 +111,8 @@ Except common options, each builder may support different options:
          ...
        }
      }
+ - `asset`: for copying asset files.
+   - `ext`: array of file extensions to copy. default `["png", "gif", "jpg", "svg", "json"]`
 
 These options are constructor options for corresponding builder, e.g., for pug builder:
 

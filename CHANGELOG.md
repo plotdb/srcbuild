@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.44
+
+ - support asset build ( static file copying )
+ - support `noView` mode in pugbuild
+
+
 ## v0.0.43
 
  - support language modifier in `intlbase` API

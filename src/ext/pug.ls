@@ -8,6 +8,7 @@ pugbuild = (opt={}) ->
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
+  @_no-view = opt.no-view or false
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
@@ -117,18 +118,19 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       p.then ~>
         for {file, mtime} in files =>
           {src, desh, desv} = @map file, intl
-          if !fs.exists-sync(src) or aux.newer(desv, mtime) => continue
+          if !fs.exists-sync(src) or aux.newer((if @_no-view => desh else desv), mtime) => continue
           code = fs.read-file-sync src .toString!
           try
             t1 = Date.now!
             if /^\/\/- ?module ?/.exec(code) => continue
-            desvdir = path.dirname(desv)
-            fs-extra.ensure-dir-sync desvdir
-            ret = pug.compileClient code, {filename: src, basedir: path.resolve(@srcdir), doctype: \html} <<< @extapi
-            ret = """ (function() { #ret; module.exports = template; })() """
-            fs.write-file-sync desv, ret
-            t2 = Date.now!
-            @log.info "#src --> #desv ( #{t2 - t1}ms )"
+            if !@_no-view =>
+              desvdir = path.dirname(desv)
+              fs-extra.ensure-dir-sync desvdir
+              ret = pug.compileClient code, {filename: src, basedir: path.resolve(@srcdir), doctype: \html} <<< @extapi
+              ret = """ (function() { #ret; module.exports = template; })() """
+              fs.write-file-sync desv, ret
+              t2 = Date.now!
+              @log.info "#src --> #desv ( #{t2 - t1}ms )"
             if !(/^\/\/- ?view ?/.exec(code)) =>
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
