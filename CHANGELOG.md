@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.46 (upcoming)
+
+ - in watcher log, show correct watched directory instead of `src`
+ - set `_root` with default value `["."]` if option `root` is omitted.
+
+
 ## v0.0.45
 
  - support customizable watching directory.
