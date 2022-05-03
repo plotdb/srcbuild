@@ -17,9 +17,11 @@ watch = function(opt){
     ignored: opt.ignored || ['.git'],
     ignoreInitial: true
   };
-  this._root = opt.root ? Array.isArray(opt.root)
-    ? opt.root
-    : [opt.root] : void 8;
+  this._root = opt.root
+    ? Array.isArray(opt.root)
+      ? opt.root
+      : [opt.root]
+    : ['.'];
   this.log = opt.logger || aux.logger;
   this.init();
   return this;
@@ -34,14 +36,14 @@ watch.prototype = import$(Object.create(Object.prototype), {
   },
   init: function(){
     var this$ = this;
-    this.watcher = chokidar.watch(this._root || ['.'], this.chokidarCfg).on('add', function(it){
+    this.watcher = chokidar.watch(this._root, this.chokidarCfg).on('add', function(it){
       return this$.add(path.normalize(it));
     }).on('change', function(it){
       return this$.change(path.normalize(it));
     }).on('unlink', function(it){
       return this$.unlink(path.normalize(it));
     });
-    this.log.info("watching src for file change".cyan);
+    this.log.info(("watching " + this._root.join(' ') + " for file change").cyan);
     this.changeDebounced = debounce(function(){
       var files;
       files = Array.from(this$.buf.change);
