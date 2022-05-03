@@ -128,6 +128,22 @@ When using shorthands like `srcbuild.lsp(...)`, you can also specify correspondi
 common options will be overwritten by scoped options.
 
 
+## Using custom builders
+
+Send adapters to watcher from `getAdapter()` of each custom builders:
+
+    require! <[@plotdb/srcbuild/dist/watch @plotdb/srcbuild/dist/ext/pug]>
+    pugbuilder = new pug(...)
+    watcher = new watch({adapters: [pugbuilder.getAdapter]})
+
+By default, watcher watches the current working directory. Change watcher behavior with following constructor options:
+
+ - `adapters`: array of adapters to use to handle file change events.
+ - `ignored`: array of glob strings to ignore when watching for changes. by default `[".git"]`.
+ - `root`: directory, or array of directories to watch. by default `["."]`.
+ - `logger`: optional. logger object with logging functions such as `info`, `warn` and `error`.
+
+
 ## ODB / On demand build
 
 use `watch.demand(target-file)` to force rebuild by request. e.g., 

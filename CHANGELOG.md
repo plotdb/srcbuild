@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.45
+
+ - support customizable watching directory.
+
+
 ## v0.0.44
 
  - support asset build ( static file copying )

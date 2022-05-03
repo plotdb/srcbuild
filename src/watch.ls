@@ -5,6 +5,7 @@ watch = (opt={}) ->
   @buf = {}
   @adapters = opt.adapters or []
   @chokidar-cfg = {persistent: true, ignored: opt.ignored or ['.git'], ignoreInitial: true}
+  @_root = if opt.root => (if Array.isArray(opt.root) => opt.root else [opt.root])
   @log = opt.logger or aux.logger
   @init!
   @
@@ -12,7 +13,7 @@ watch = (opt={}) ->
 watch.prototype = Object.create(Object.prototype) <<< do
   add-adapter: (b) -> if Array.isArray(b) => @adapters ++= b else @adapters.push b
   init: ->
-    @watcher = chokidar.watch <[.]>, @chokidar-cfg
+    @watcher = chokidar.watch (@_root or <[.]>), @chokidar-cfg
       .on \add, (~> @add path.normalize it)
       .on \change, (~> @change path.normalize it)
       .on \unlink, (~> @unlink path.normalize it)
