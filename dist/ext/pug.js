@@ -152,7 +152,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         if (!(lng = lng || this$.i18n.language)) {
           return p;
         }
-        return path.join(this$.intlbase, lng, p);
+        return path.join('/', this$.intlbase, lng, p);
       };
       ret.intlbase = function(p, lng){
         p == null && (p = "");
@@ -160,7 +160,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         if (!(lng = lng || this$.i18n.language)) {
           return p;
         }
-        return path.join(this$.intlbase, lng, p);
+        return path.join('/', this$.intlbase, lng, p);
       };
       (ret.filters || (ret.filters = {})).i18n = function(t, o){
         return this$.i18n.t((t || '').trim());

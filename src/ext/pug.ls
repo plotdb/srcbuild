@@ -72,11 +72,11 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       ret.i18n.language = ~> @i18n.language
       ret.i18n.intlbase = (p = "", lng = "") ~>
         if !(lng = lng or @i18n.language) => return p
-        path.join(@intlbase, lng, p)
+        path.join(\/, @intlbase, lng, p)
       # deprecated. use i18n.intlbase instead.
       ret.intlbase = (p = "", lng = "") ~>
         if !(lng = lng or @i18n.language) => return p
-        path.join(@intlbase, lng, p)
+        path.join(\/, @intlbase, lng, p)
       ret.{}filters.i18n = (t, o) ~> @i18n.t((t or '').trim!)
 
     return ret
