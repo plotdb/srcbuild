@@ -1,9 +1,10 @@
 # Change Log
 
-## v0.0.46 (upcoming)
+## v0.0.46
 
  - in watcher log, show correct watched directory instead of `src`
  - set `_root` with default value `["."]` if option `root` is omitted.
+ - force `intlbase` to return absolute path
 
 
 ## v0.0.45
