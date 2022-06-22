@@ -80,7 +80,7 @@ pugViewEngine = function(options){
         if (!(lc.isCached = obj.mtime != null && lc.useCache)) {
           obj.mtime = lc.mtime;
         }
-        ret = pug.compileClient(obj.buf, import$((ref$ = import$({}, opt), ref$.filename = src, ref$.basedir = opt.basedir, ref$.doctype = 'html', ref$), extapi));
+        ret = pug.compileClient(obj.buf, import$((ref$ = import$({}, opt), ref$.filename = src, ref$.basedir = opt.basedir, ref$.doctype = 'html', ref$.compileDebug = false, ref$), extapi));
         ret = " (function() { " + ret + "; module.exports = template; })() ";
         return fsExtra.ensureDir(path.dirname(desv)).then(function(){
           return fsp.writeFile(desv, ret);

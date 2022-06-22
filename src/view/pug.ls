@@ -59,7 +59,7 @@ pug-view-engine = (options) ->
           if !(lc.is-cached = (obj.mtime? and lc.use-cache)) => obj.mtime = lc.mtime
           ret = pug.compileClient(
             obj.buf,
-            {} <<< opt <<< {filename: src, basedir: opt.basedir, doctype: \html} <<< extapi
+            {} <<< opt <<< {filename: src, basedir: opt.basedir, doctype: \html, compileDebug: false} <<< extapi
           )
           ret = """ (function() { #ret; module.exports = template; })() """
           fs-extra.ensure-dir path.dirname(desv)

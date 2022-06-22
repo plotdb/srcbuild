@@ -32,7 +32,8 @@ extapi = builder.getExtapi();
 ret = pug.render(fs.readFileSync(src).toString(), import$({
   filename: src,
   basedir: opt.basedir,
-  doctype: 'html'
+  doctype: 'html',
+  compileDebug: false
 }, extapi));
 if (des) {
   fsExtra.ensureDirSync(path.dirname(des));

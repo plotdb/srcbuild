@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.47
+
+ - disable pug `compileDebug` option by default
+ - rebuild demo dir
+
+
 ## v0.0.46
 
  - in watcher log, show correct watched directory instead of `src`
