@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.48
+
+ - support pug generation from outside of src dir
+
+
 ## v0.0.47
 
  - disable pug `compileDebug` option by default

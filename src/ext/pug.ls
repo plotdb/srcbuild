@@ -1,6 +1,8 @@
 require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked @plotdb/colors]>
 require! <[./base ../aux]>
 
+cwd = process.cwd!
+
 pugbuild = (opt={}) ->
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
@@ -105,9 +107,17 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     return null
 
   map: (file, intl) ->
-    src: file
-    desh: file.replace(@srcdir, path.join(@desdir, intl)).replace(/.pug$/, '.html')
-    desv: file.replace(@srcdir, path.join(@viewdir, intl)).replace(/.pug/, '.js')
+    # this may be inaccurate but will work most of the time.
+    # TODO try a better approach
+    if ~file.indexOf(@srcdir) =>
+      src: file
+      desh: file.replace(@srcdir, path.join(@desdir, intl)).replace(/.pug$/, '.html')
+      desv: file.replace(@srcdir, path.join(@viewdir, intl)).replace(/.pug/, '.js')
+    else # out of src dir - put under .@root
+      alt = path.resolve(path.join('/', path.relative('.', file)))
+      src: file
+      desh: path.join(cwd, @desdir, \.@root, intl, alt).replace(/.pug$/, '.html')
+      desv: path.join(cwd, @viewdir, \.@root, intl, alt).replace(/.pug$/, '.js')
 
   build: (files) ->
     _ = (lng = '') ~>
