@@ -5,7 +5,7 @@ lib = path.dirname(fs.realpathSync __filename.replace(/\(js\)$/, ''))
 main = require "#lib/dist/main"
 i18n({enabled:true})
   .then (i18n) ->
-    ret = main.lsp {i18n, bundle: {config-file: 'web/bundle.json', relative-path: true}}
+    ret = main.lsp {base: <[web alt]>, i18n, bundle: {config-file: 'web/bundle.json', relative-path: true}}
 
 # sample bundling:
 # ret = main.lsp {i18n, bundle: {configFile: 'bundle.json'}}

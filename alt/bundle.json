@@ -1,0 +1,12 @@
+{
+  "js": {
+    "demo": [
+      "static/js/index.min.js"
+    ]
+  },
+  "css": {
+    "demo": [
+      "static/css/index.min.css"
+    ]
+  }
+}

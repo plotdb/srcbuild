@@ -12,25 +12,32 @@ module.exports = {
   base: base,
   i18n: i18n,
   lsp: function(opt){
-    var base, adapters, ref$, watcher;
+    var base, i$, len$, b, adapters, ref$, watcher;
     opt == null && (opt = {});
     base = opt.base || 'web';
-    adapters = [
-      new lsc(import$((ref$ = {
-        base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.lsc || {})), new stylus(import$((ref$ = {
-        base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.stylus || {})), new pug(import$((ref$ = {
-        base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.pug || {})), new bundle(import$((ref$ = {
-        base: base
-      }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.bundle || {}))
-    ].map(function(it){
-      return it.getAdapter();
-    });
+    base = Array.isArray(base)
+      ? base
+      : [base];
+    for (i$ = 0, len$ = base.length; i$ < len$; ++i$) {
+      b = base[i$];
+      adapters = [
+        new lsc(import$((ref$ = {
+          base: b
+        }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.lsc || {})), new stylus(import$((ref$ = {
+          base: b
+        }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.stylus || {})), new pug(import$((ref$ = {
+          base: b
+        }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.pug || {})), new bundle(import$((ref$ = {
+          base: b
+        }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.bundle || {}))
+      ].map(fn$);
+    }
     return watcher = new watch((ref$ = {
       adapters: adapters
     }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$));
+    function fn$(it){
+      return it.getAdapter();
+    }
   }
 };
 function import$(obj, src){
