@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.49
+
+ - support building of multiple subtree
+
+
 ## v0.0.48
 
  - support pug generation from outside of src dir
