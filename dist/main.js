@@ -12,15 +12,16 @@ module.exports = {
   base: base,
   i18n: i18n,
   lsp: function(opt){
-    var base, i$, len$, b, adapters, ref$, watcher;
+    var base, adapters, i$, len$, b, ref$, watcher;
     opt == null && (opt = {});
     base = opt.base || 'web';
     base = Array.isArray(base)
       ? base
       : [base];
+    adapters = [];
     for (i$ = 0, len$ = base.length; i$ < len$; ++i$) {
       b = base[i$];
-      adapters = [
+      adapters = adapters.concat([
         new lsc(import$((ref$ = {
           base: b
         }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.lsc || {})), new stylus(import$((ref$ = {
@@ -30,7 +31,7 @@ module.exports = {
         }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.pug || {})), new bundle(import$((ref$ = {
           base: b
         }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.bundle || {}))
-      ].map(fn$);
+      ].map(fn$));
     }
     return watcher = new watch((ref$ = {
       adapters: adapters

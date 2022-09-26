@@ -6,8 +6,9 @@ module.exports = do
   lsp: (opt = {}) ->
     base = opt.base or 'web'
     base = if Array.isArray(base) => base else [base]
+    adapters = []
     for b in base =>
-      adapters = [
+      adapters ++= [
         new lsc({base: b} <<< opt{logger,i18n,ignored} <<< (opt.lsc or {}))
         new stylus({base: b} <<< opt{logger,i18n,ignored}  <<< (opt.stylus or {}))
         new pug({base: b} <<< opt{logger,i18n,ignored} <<< (opt.pug or {}))
