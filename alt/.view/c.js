@@ -103,10 +103,6 @@ if(!libLoader) {
 
 
 
-
-
-
-
 pug_html = pug_html + "\u003Chtml\u003E\u003Chead\u003E\u003C\u002Fhead\u003E\u003Cbody\u003E\u003C!DOCTYPE html\u003E";
 if(!libLoader) {
   libLoader = {
@@ -119,10 +115,6 @@ if(!libLoader) {
   }
   if(version) { libLoader.version(version); }
 }
-
-
-
-
 
 
 

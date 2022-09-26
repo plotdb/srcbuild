@@ -103,10 +103,6 @@ if(!libLoader) {
 
 
 
-
-
-
-
 pug_html = pug_html + "\u003Chtml\u003E\u003Chead\u003E\u003C\u002Fhead\u003E\u003Cbody\u003Evar a,b;a=1;b=function(){return console.log(\"c\")};\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
     }.call(this, "libLoader" in locals_for_with ?
         locals_for_with.libLoader :
