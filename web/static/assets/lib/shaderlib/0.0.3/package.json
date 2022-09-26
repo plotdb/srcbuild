@@ -1,0 +1,39 @@
+{
+  "author": "zbryikt",
+  "name": "shaderlib",
+  "description": "Shaderlib",
+  "version": "0.0.3",
+  "homepage": "https://github.com/zbryikt/shaderlib",
+  "files": [ "lib/**/*", "dist/**/*" ],
+  "main": "./dist/renderer.js",
+  "workspaces": [ "lib" ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zbryikt/shaderlib"
+  },
+  "engines": {
+    "node": ">=10.14.1",
+    "npm": ">=6.4.1"
+  },
+  "scripts": {
+    "start": "./node_modules/.bin/lsc web/server.ls"
+  },
+  "devDependencies": {
+    "@loadingio/ldquery": "^2.2.0",
+    "@zbryikt/template": "^2.3.21",
+    "@plotdb/srcbuild": "^0.0.24",
+    "browserify": "^17.0.0",
+    "glslify": "^7.1.1",
+    "fedep": "^0.0.16",
+    "glsl-edge-detection": "^1.1.0",
+    "glsl-halftone": "^1.0.4",
+    "uglify-js": "^3.2.0",
+    "livescript": "^1.6.0"
+  },
+  "frontendDependencies": {
+    "root": "web/static/assets/lib",
+    "modules": [
+      "@loadingio/ldquery"
+    ]
+  }
+}

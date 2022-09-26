@@ -1,6 +1,10 @@
 doctype html
 html
   head
+    +css([
+      {name: "ldcover"},
+      {name: "ldloader"}
+    ], {pack: true})
     style(type="text/css"): :stylus
       html, body { width: 100%; height: 100%}
       h1 { color: #f00; }
@@ -9,9 +13,9 @@ html
       # hi
       this is a test of markdown ( by marked ) generation.
     a(href=intlbase("someurl", "kr")) link to somurl kr version
+    include @/ldview/index.pug
     script
       include:lsc index.ls
-      include @/ldview/dist/ldview.pug
     +scope("123")
       div hi
     -
@@ -22,4 +26,4 @@ html
       { name: "ldcolor" },
       { name: "ldcover" },
       { name: "ldloader" }
-    ])
+    ], {pack: true})

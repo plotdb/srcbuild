@@ -3,7 +3,7 @@ function pug_escape(e){var a=""+e,t=pug_match_html.exec(a);if(!t)return e;var r,
 var pug_match_html=/["&<>]/;function template(locals) {var pug_html = "", pug_mixins = {}, pug_interp;;
     var locals_for_with = (locals || {});
     
-    (function (Array, c, defer, libLoader, url, version) {
+    (function (Array, c, defer, hashfile, libLoader, md5, url, version) {
       pug_html = pug_html + "\u003C!DOCTYPE html\u003E";
 if(!libLoader) {
   libLoader = {
@@ -19,6 +19,7 @@ if(!libLoader) {
 
 pug_mixins["script"] = pug_interp = function(os,cfg){
 var block = (this && this.block), attributes = (this && this.attributes) || {};
+var str = '', urls = [];
 if(!Array.isArray(os)) { os = [os]; }
 // iterate os
 ;(function(){
@@ -33,11 +34,17 @@ else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (
 if (!libLoader.js.url[url]) {
 libLoader.js.url[url] = true;
 defer = (typeof(c.defer) == "undefined" ? true : !!c.defer);
+if (cfg && cfg.pack) {
+str = str + ';' + url;
+urls.push(url);
+}
+else {
 if (/^https?:\/\/./.exec(url)) {
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url, true, true)+pug_attr("defer", defer, true, true)+pug_attr("async", !!c.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
 }
 else {
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url + libLoader._v, true, true)+pug_attr("defer", defer, true, true)+pug_attr("async", !!c.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
 }
 }
       }
@@ -53,6 +60,11 @@ else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (
 if (!libLoader.js.url[url]) {
 libLoader.js.url[url] = true;
 defer = (typeof(c.defer) == "undefined" ? true : !!c.defer);
+if (cfg && cfg.pack) {
+str = str + ';' + url;
+urls.push(url);
+}
+else {
 if (/^https?:\/\/./.exec(url)) {
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url, true, true)+pug_attr("defer", defer, true, true)+pug_attr("async", !!c.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
 }
@@ -60,11 +72,42 @@ else {
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", url + libLoader._v, true, true)+pug_attr("defer", defer, true, true)+pug_attr("async", !!c.async, true, true)) + "\u003E\u003C\u002Fscript\u003E";
 }
 }
+}
     }
   }
 }).call(this);
 
+if (cfg && cfg.pack) {
+var name = md5(str);
+var filename = "/js/pack/" + name + ".js";
+hashfile({type: "js", name: name, files: urls});
+pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", filename + libLoader._v, true, true)) + "\u003E\u003C\u002Fscript\u003E";
+}
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -99,9 +142,13 @@ pug_html = pug_html + "\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
         locals_for_with.c :
         typeof c !== 'undefined' ? c : undefined, "defer" in locals_for_with ?
         locals_for_with.defer :
-        typeof defer !== 'undefined' ? defer : undefined, "libLoader" in locals_for_with ?
+        typeof defer !== 'undefined' ? defer : undefined, "hashfile" in locals_for_with ?
+        locals_for_with.hashfile :
+        typeof hashfile !== 'undefined' ? hashfile : undefined, "libLoader" in locals_for_with ?
         locals_for_with.libLoader :
-        typeof libLoader !== 'undefined' ? libLoader : undefined, "url" in locals_for_with ?
+        typeof libLoader !== 'undefined' ? libLoader : undefined, "md5" in locals_for_with ?
+        locals_for_with.md5 :
+        typeof md5 !== 'undefined' ? md5 : undefined, "url" in locals_for_with ?
         locals_for_with.url :
         typeof url !== 'undefined' ? url : undefined, "version" in locals_for_with ?
         locals_for_with.version :
