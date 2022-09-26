@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.51
+
+ - support auto packing with limitation.
+
+
 ## v0.0.50
 
  - fix bug: multiple subtree features doesn't work, because we didn't add all adapters into watcher

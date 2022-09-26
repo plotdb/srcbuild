@@ -13,10 +13,10 @@ setup a lsp ( livescript + stylus + pug ) watcher:
 where
 
  - `base`: root dir for `src` and `static` folders. default `.`
- - `i18n`: i18n object. 
+ - `i18n`: i18n object.
  - `ignored`: files to be ignored. in [anymatch](https://github.com/micromatch/anymatch)-compatible definition.
    - by default ['.git']
- - `logger`: optional. for logging output. use `console.log` by default. 
+ - `logger`: optional. for logging output. use `console.log` by default.
    - sample logger with `pino`:
 
      require! <[@plotdb/srcbuild pino]>
@@ -52,7 +52,7 @@ Extend base builder for a customized builder:
 with following user-defined functions:
 
  - `is-supported(file)`: return true if `file` is supported by this builder, otherwise return false.
-   - `file`: file name for file to be verified. Relative to cwd. 
+   - `file`: file name for file to be verified. Relative to cwd.
  - `get-dependencies(file)`: return a list of files that this file depends on.
    - `file`: same as `is-supported`
  - `build(files)`: should compile / generate target files of given file list `files`.
@@ -71,7 +71,7 @@ and the common options for `init` are as following:
  - `desdir`: directory for built files. should be relative to `base`. default `static` if omitted.
  - `logger`: logger for log output. use `console` if omitted.
 
-check `src/ext/lsc.ls` or `src/ext/pug.ls` for example. 
+check `src/ext/lsc.ls` or `src/ext/pug.ls` for example.
 
 
 ## Options for custom builder
@@ -93,6 +93,7 @@ Except common options, each builder may support different options:
              span:i18n translate this text
    - `noView`: default false. when true, js view files ( generated to `viewdir` ) won't be built.
    - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
+   - `bundler`: default null. Auto packing will be possible only if this is provided.
  - `lsc`:
    - `useGlslify`: default false. set to true if you need glslify of lsc files.
      - *NOTE* this is an experiment feature and may be removed ( move to standalone builder ) in the future.
@@ -116,7 +117,7 @@ Except common options, each builder may support different options:
 
 These options are constructor options for corresponding builder, e.g., for pug builder:
 
-    new pugbuild({ i18n: ... }) 
+    new pugbuild({ i18n: ... })
 
 When using shorthands like `srcbuild.lsp(...)`, you can also specify corresponding option in scope, such as:
 
@@ -146,7 +147,7 @@ By default, watcher watches the current working directory. Change watcher behavi
 
 ## ODB / On demand build
 
-use `watch.demand(target-file)` to force rebuild by request. e.g., 
+use `watch.demand(target-file)` to force rebuild by request. e.g.,
 
     require! <[srcbuild]>
     watch = srcbuild.lsp!
@@ -237,6 +238,31 @@ Additionally, you can also use a list of modules:
       {name: "with-defer-async", defer: false, async: true}
       {name: "omit-everything"},
     ])
+
+Use the second option object to specify additional parameters, including:
+
+ - `pack`: *experimental* default false. Enable auto packing or not.
+   - if true, enable auto packing which trigger bundling automatically to a filename from md5 of all script urls.
+   - require `bundler` option in pugbuild constructor.
+   - doesn't work with external urls.
+   - there are still issues about rebuilding and build from view.
+
+#### Auto Packing Issue (TODO)
+
+Auto packing works fine with static built files. However, there are two issues:
+
+ - it's kinda tricky to trigger a pack file rebuild if the pack file is mssing - since there is no clue from the hashed file name to the urls used.
+ - may slow down dynamic generated views since each rendering checks if the bundled file should be rebuilt against its source files.
+ - doesn't work for external urls.
+
+For the above issues, we can:
+
+ - add additional information ( such as source pug name base64 string ) in the hashed file name for reversed resolving all source files
+ - completely ignore auto packing with dynamic view rendering, instead we support ODB of bundle files
+ - extend bundler to support remote file fetching
+
+These solutions will be left in TODOs.
+
 
 
 ### Filters

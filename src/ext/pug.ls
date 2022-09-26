@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked @plotdb/colors]>
+require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked crypto @plotdb/colors]>
 require! <[./base ../aux]>
 
 cwd = process.cwd!
@@ -8,6 +8,7 @@ pugbuild = (opt={}) ->
   @intlbase = opt.intlbase or 'intl'
   @filters = opt.filters or {}
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
+  @bundler = opt.bundler
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @_no-view = opt.no-view or false
@@ -68,6 +69,11 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             catch e
               @log.error "[ERROR@#it]: ", e
         return ret
+      md5: (str) -> crypto.createHash \md5 .update str .digest \hex
+      hashfile: ({type, name, files}) ~>
+        if !@bundler => return
+        files = files.map (file) ~> path.relative(@base, path.join(@desdir, file))
+        @bundler.build files, {type, name, odb: true}
 
     if @i18n =>
       ret.i18n = ~> @i18n.t((it or '').trim!)

@@ -37,16 +37,31 @@ bundlebuild.prototype = Object.create(base.prototype) <<< do
     re = new RegExp("^#{@desdir}/(css|js)/pack/(.+?)(\.min)?\.(css|js)")
     if !(ret = re.exec file) => return null
     return (@config[ret.1][ret.2] or []).0
-  build: (files, force = false) ->
+  build: (files, opt) ->
+    force = if typeof(opt) == \boolean => opt else false
+    if !opt? => opt = {}
     if files.filter(~> it.file == @config-file).length =>
       @prepare-config!
       files = Array.from(@file-list).map(->{file: it})
       files.splice files.indexOf(@config-file), 1
       return @build files, true
-    dirty = {}
-    for file in files =>
-      if !(ret = @file-map[file.file]) => continue
-      dirty{}[ret.type][ret.name] = true
+
+    if opt.odb =>
+      dirty = {}
+      dirty{}[opt.type][opt.name] = true
+      nfs = files.map (f) ~> path.join(@_relative-path, f)
+      ofs = @config{}[opt.type][opt.name] or []
+      if nfs.length != ofs.length or nfs.filter(->!(it in ofs)).length => force = true
+      @config{}[opt.type][opt.name] = nfs
+      for file in @config[opt.type][opt.name] =>
+        @file-map[file] = opt{type,name}
+        @file-list.add file
+    else
+      dirty = {}
+      for file in files =>
+        if !(ret = @file-map[file.file]) => continue
+        dirty{}[ret.type][ret.name] = true
+
     ps = []
     for type of dirty => for name of dirty[type] =>
       desdir = path.join(@desdir, type, 'pack')

@@ -14,6 +14,7 @@
 
 mixin script(os,cfg)
   -
+    var str = '', urls = [];
     if(!Array.isArray(os)) { os = [os]; }
   each o in os
     -
@@ -26,11 +27,22 @@ mixin script(os,cfg)
       - defer = (typeof(c.defer) == "undefined" ? true : !!c.defer);
       if /^https?:\/\/./.exec(url)
         script(type="text/javascript",src=url, defer=defer, async=!!c.async)
+      else if cfg && cfg.pack
+        -
+          str = str + ';' + url;
+          urls.push(url);
       else
         script(type="text/javascript",src=url + libLoader._v, defer=defer, async=!!c.async)
+  if cfg && cfg.pack
+    -
+      var name = md5(str);
+      var filename = "/js/pack/" + name + ".js";
+      hashfile({type: "js", name: name, files: urls});
+    script(type="text/javascript",src=filename + libLoader._v)
 
 mixin css(os,cfg)
   -
+    var str = '', urls = [];
     if(!Array.isArray(os)) { os = [os]; }
   each o in os
     -
@@ -40,4 +52,17 @@ mixin css(os,cfg)
       else { url = libLoader._r + "/" + o.name + "/" + (o.version || 'main') + "/" + (o.path || "index.min.css"); }
     if !libLoader.css.url[url]
       - libLoader.css.url[url] = true;
-      link(rel="stylesheet",type="text/css",href=url + libLoader._v)
+      if /^https?:\/\/./.exec(url)
+        link(rel="stylesheet",type="text/css",href=url)
+      else if cfg && cfg.pack
+        -
+          str = str + ';' + url;
+          urls.push(url);
+      else
+        link(rel="stylesheet",type="text/css",href=url + libLoader._v)
+  if cfg && cfg.pack
+    -
+      var name = md5(str);
+      var filename = "/css/pack/" + name + ".css";
+      hashfile({type: "css", name: name, files: urls});
+    link(rel="stylesheet",type="text/css",href=filename + libLoader._v)

@@ -83,9 +83,12 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
     }
     return (this.config[ret[1]][ret[2]] || [])[0];
   },
-  build: function(files, force){
-    var dirty, i$, len$, file, ret, key$, ps, type, name, desdir, des, this$ = this;
-    force == null && (force = false);
+  build: function(files, opt){
+    var force, dirty, key$, nfs, ofs, ref$, i$, len$, file, ret, ps, type, name, desdir, des, this$ = this;
+    force = typeof opt === 'boolean' ? opt : false;
+    if (opt == null) {
+      opt = {};
+    }
     if (files.filter(function(it){
       return it.file === this$.configFile;
     }).length) {
@@ -98,13 +101,36 @@ bundlebuild.prototype = import$(Object.create(base.prototype), {
       files.splice(files.indexOf(this.configFile), 1);
       return this.build(files, true);
     }
-    dirty = {};
-    for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
-      file = files[i$];
-      if (!(ret = this.fileMap[file.file])) {
-        continue;
+    if (opt.odb) {
+      dirty = {};
+      (dirty[key$ = opt.type] || (dirty[key$] = {}))[opt.name] = true;
+      nfs = files.map(function(f){
+        return path.join(this$._relativePath, f);
+      });
+      ofs = ((ref$ = this.config)[key$ = opt.type] || (ref$[key$] = {}))[opt.name] || [];
+      if (nfs.length !== ofs.length || nfs.filter(function(it){
+        return !in$(it, ofs);
+      }).length) {
+        force = true;
       }
-      (dirty[key$ = ret.type] || (dirty[key$] = {}))[ret.name] = true;
+      ((ref$ = this.config)[key$ = opt.type] || (ref$[key$] = {}))[opt.name] = nfs;
+      for (i$ = 0, len$ = (ref$ = this.config[opt.type][opt.name]).length; i$ < len$; ++i$) {
+        file = ref$[i$];
+        this.fileMap[file] = {
+          type: opt.type,
+          name: opt.name
+        };
+        this.fileList.add(file);
+      }
+    } else {
+      dirty = {};
+      for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
+        file = files[i$];
+        if (!(ret = this.fileMap[file.file])) {
+          continue;
+        }
+        (dirty[key$ = ret.type] || (dirty[key$] = {}))[ret.name] = true;
+      }
     }
     ps = [];
     for (type in dirty) {
@@ -234,4 +260,9 @@ function import$(obj, src){
   var own = {}.hasOwnProperty;
   for (var key in src) if (own.call(src, key)) obj[key] = src[key];
   return obj;
+}
+function in$(x, xs){
+  var i = -1, l = xs.length >>> 0;
+  while (++i < l) if (x === xs[i]) return true;
+  return false;
 }
