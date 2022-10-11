@@ -9,6 +9,7 @@ module.exports = do
     adapters = []
     for b in base =>
       bundler = new bundle({base: b} <<< opt{logger,i18n,ignored}  <<< (opt.bundle or {}))
+      adapters.push bundler.get-adapter!
       adapters ++= [
         new lsc({base: b} <<< opt{logger,i18n,ignored} <<< (opt.lsc or {}))
         new stylus({base: b} <<< opt{logger,i18n,ignored}  <<< (opt.stylus or {}))

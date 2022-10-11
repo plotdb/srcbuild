@@ -24,6 +24,7 @@ module.exports = {
       bundler = new bundle(import$((ref$ = {
         base: b
       }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$), opt.bundle || {}));
+      adapters.push(bundler.getAdapter());
       adapters = adapters.concat([
         new lsc(import$((ref$ = {
           base: b

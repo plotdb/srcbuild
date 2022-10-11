@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.54 (upcoming)
+
+ - fix bug: bunlder is not added into adapter list in lsp, thus sometimes rebuild wont be triggered.
+
+
 ## v0.0.53
 
  - fix bug: ext/bundle fails if `relative-path` is false
