@@ -16,11 +16,11 @@ bundlebuild = function(opt){
     js: {}
   };
   this.configFile = opt.configFile || null;
-  this._relativePath = !(opt.relativePath != null)
-    ? false
-    : typeof opt.relativePath === 'string'
-      ? opt.relativePath
-      : this.configFile ? path.dirname(this.configFile) : false;
+  this._relativePath = typeof opt.relativePath === 'string'
+    ? opt.relativePath
+    : opt.relativePath && this.configFile
+      ? path.dirname(this.configFile)
+      : process.cwd();
   this.prepareConfig();
   return this.init(import$({
     srcdir: 'static',

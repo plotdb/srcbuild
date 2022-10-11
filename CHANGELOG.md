@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.53
+
+ - fix bug: ext/bundle fails if `relative-path` is false
+
+
 ## v0.0.52
 
  - fix bug: precompiled pug js should still be run with custom option and api

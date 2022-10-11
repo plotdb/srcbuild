@@ -5,10 +5,9 @@ require! <[./base ../aux ../adapter]>
 bundlebuild = (opt={}) ->
   @config = opt.config or {css: {}, js: {}}
   @config-file = opt.config-file or null #'bundle.json'
-  @_relative-path = if !(opt.relative-path?) => false
-  else if typeof(opt.relative-path) == \string => opt.relative-path
-  else if @config-file => path.dirname(@config-file)
-  else false
+  @_relative-path = if typeof(opt.relative-path) == \string => opt.relative-path
+  else if opt.relative-path and @config-file => path.dirname(@config-file)
+  else process.cwd!
   @prepare-config!
   @init({srcdir: 'static', desdir: 'static'} <<< opt)
 
