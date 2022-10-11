@@ -42,7 +42,9 @@ pug-view-engine = (options) ->
       # js not available: no precompiled js. we have to render directly from source pug file.
       # cache with js - it's from pug cache. just escape to catch block
       if !ret.js => throw new Error('')
-      ret = ret.js(opt)
+      ret = ret.js({} <<< opt <<< {
+        filename: src, basedir: opt.basedir, doctype: \html, compileDebug: false
+      } <<< extapi)
       if lc.dev => log src, opt, (Date.now! - start-time), \precompiled, lc.is-cached
       cb null, ret
     # precompiled pug js not available. compile from pug directly instead.

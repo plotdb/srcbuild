@@ -57,7 +57,7 @@ pugViewEngine = function(options){
       if (!ret.js) {
         throw new Error('');
       }
-      ret = ret.js(opt);
+      ret = ret.js(import$((ref$ = import$({}, opt), ref$.filename = src, ref$.basedir = opt.basedir, ref$.doctype = 'html', ref$.compileDebug = false, ref$), extapi));
       if (lc.dev) {
         log(src, opt, Date.now() - startTime, 'precompiled', lc.isCached);
       }

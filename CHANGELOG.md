@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.52
+
+ - fix bug: precompiled pug js should still be run with custom option and api
+
+
 ## v0.0.51
 
  - support auto packing with limitation.
