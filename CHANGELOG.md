@@ -1,6 +1,6 @@
 # Change Log
 
-## v0.0.54 (upcoming)
+## v0.0.54
 
  - fix bug: bunlder is not added into adapter list in lsp, thus sometimes rebuild wont be triggered.
  - fix bug: pack option in css/script should by default use minimized file.
