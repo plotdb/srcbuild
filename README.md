@@ -246,6 +246,7 @@ Use the second option object to specify additional parameters, including:
    - require `bundler` option in pugbuild constructor.
    - doesn't work with external urls.
    - there are still issues about rebuilding and build from view.
+ - `min`: default true. When true, use minimized packed file with pack option.
 
 #### Auto Packing Issue (TODO)
 

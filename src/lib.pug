@@ -36,7 +36,7 @@ mixin script(os,cfg)
   if cfg && cfg.pack
     -
       var name = md5(str);
-      var filename = "/js/pack/" + name + ".js";
+      var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
       hashfile({type: "js", name: name, files: urls});
     script(type="text/javascript",src=filename + libLoader._v)
 
@@ -63,6 +63,6 @@ mixin css(os,cfg)
   if cfg && cfg.pack
     -
       var name = md5(str);
-      var filename = "/css/pack/" + name + ".css";
+      var filename = "/css/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
       hashfile({type: "css", name: name, files: urls});
     link(rel="stylesheet",type="text/css",href=filename + libLoader._v)
