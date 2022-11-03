@@ -96,9 +96,9 @@ pugViewEngine = function(options){
         }
         return cb(null, ret);
       })['catch'](function(err){
-        logger.error({
-          err: err
-        }, src + " view rendering failed.");
+        err.id = 1033;
+        err.name = 'lderror';
+        err.log = true;
         return cb(err, null);
       });
     }

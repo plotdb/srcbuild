@@ -72,7 +72,7 @@ pug-view-engine = (options) ->
           if lc.dev => log src, opt, (Date.now! - start-time), 'from pug', lc.is-cached
           cb null, ret
         .catch (err) ->
-          logger.error {err}, "#src view rendering failed."
+          err <<< {id: 1033, name: \lderror, log: true}
           cb err, null
 
 module.exports = pug-view-engine

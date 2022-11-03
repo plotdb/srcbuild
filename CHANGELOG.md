@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.55
+
+ - remove logging when view rendering fails since it should be handled by express server
+ - make error of view rendering fails a lderror with id 1033
+
+
 ## v0.0.54
 
  - fix bug: bunlder is not added into adapter list in lsp, thus sometimes rebuild wont be triggered.
