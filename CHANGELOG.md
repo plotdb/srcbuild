@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.0.56
+
+ - audit fix vulnerability about dependency `minimatch`
+ - enable asset build directly in lsp
+
+
 ## v0.0.55
 
  - remove logging when view rendering fails since it should be handled by express server

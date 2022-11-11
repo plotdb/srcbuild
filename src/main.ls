@@ -1,4 +1,4 @@
-require! <[fs ./i18n ./watch ./ext/pug ./ext/stylus ./ext/lsc ./ext/bundle ./ext/base]>
+require! <[fs ./i18n ./watch ./ext/pug ./ext/stylus ./ext/lsc ./ext/bundle ./ext/asset ./ext/base]>
 
 module.exports = do
   base: base
@@ -14,5 +14,6 @@ module.exports = do
         new lsc({base: b} <<< opt{logger,i18n,ignored} <<< (opt.lsc or {}))
         new stylus({base: b} <<< opt{logger,i18n,ignored}  <<< (opt.stylus or {}))
         new pug({base: b, bundler} <<< opt{logger,i18n,ignored} <<< (opt.pug or {}))
+        new asset({base: b} <<< opt{logger,i18n,ignored} <<< (opt.asset or {}))
       ].map -> it.get-adapter!
     watcher = new watch({adapters} <<< opt{logger, i18n, ignored})
