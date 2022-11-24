@@ -3,3 +3,21 @@
    - have to access locals to resolve correct path
  - glslify should not be plugged directly inside `lscbuild`.
    - We should remove it, and perhaps make it a independent builder
+ - bundler rules from pug file will be gone after srcbuild restarted.
+   - we can save file -> hash mapping to be loaded in some mapping file
+     - but if the rules are updated, how do we know?
+   - alternatively, we can save src files of the rule,
+     and parse the src pug file everytime a js/css file is updated to see if a rebuild is necessary.
+     - unfortunately this requires a parse of the source pug file. kinda tough
+       - we can do this only if pug file is newer.
+       - and if the pug file is newer, it probably should be rebuilt
+   - so here is the algorithm:
+     - 1. pug is compiled. pack rules write to pack/rule.file after bundle is built.
+       - rule file store information such as "src-pug": [file list]
+     - 2. bundle file is rebuilt if any files in file list is touched.
+     - 3. when restarting, rule file is read and used to re-construct bundle rule.
+       - if any src-pug listed is newer than bundle file, it probably will also newer than its des file,
+         otherwise anyone mess up with the des file. thus, it will trigger the bundle file rebuild.
+       - ... and thus bundle file will be regen.
+       - however, if pack is disabled ( or removed ) in the newer src-pug, it won't trigger bundle file regen.
+       - thus, bundler should be run for rule file regen when rebuilding of src-pug listed.
