@@ -77,7 +77,7 @@ pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_att
 
 if (cfg && cfg.pack) {
 var name = md5(str);
-var filename = "/js/pack/" + name + ".js";
+var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
 hashfile({type: "js", name: name, files: urls});
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", filename + libLoader._v, true, true)) + "\u003E\u003C\u002Fscript\u003E";
 }
@@ -130,7 +130,7 @@ pug_mixins["script"]([
     { name: "ldcolor" },
     { name: "ldcover" },
     { name: "ldloader" }
-  ]);
+  ], {pack: true});
 pug_html = pug_html + "\u003C\u002Fbody\u003E\u003C\u002Fhtml\u003E";
     }.call(this, "Array" in locals_for_with ?
         locals_for_with.Array :

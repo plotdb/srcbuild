@@ -84,7 +84,7 @@ pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_att
 
 if (cfg && cfg.pack) {
 var name = md5(str);
-var filename = "/js/pack/" + name + ".js";
+var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
 hashfile({type: "js", name: name, files: urls});
 pug_html = pug_html + "\u003Cscript" + (" type=\"text\u002Fjavascript\""+pug_attr("src", filename + libLoader._v, true, true)) + "\u003E\u003C\u002Fscript\u003E";
 }
@@ -147,7 +147,7 @@ pug_html = pug_html + "\u003Clink" + (" rel=\"stylesheet\" type=\"text\u002Fcss\
 
 if (cfg && cfg.pack) {
 var name = md5(str);
-var filename = "/css/pack/" + name + ".css";
+var filename = "/css/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
 hashfile({type: "css", name: name, files: urls});
 pug_html = pug_html + "\u003Clink" + (" rel=\"stylesheet\" type=\"text\u002Fcss\""+pug_attr("href", filename + libLoader._v, true, true)) + "\u003E";
 }
