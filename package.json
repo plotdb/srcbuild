@@ -47,6 +47,7 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
+    "express": "^4.18.2",
     "fedep": "^1.1.7",
     "ldcolor": "^1.0.0",
     "ldcover": "^3.2.1",
