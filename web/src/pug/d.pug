@@ -1,0 +1,28 @@
+doctype html
+html
+  head
+  body
+    -
+      pug_mixins.blah = function() {
+        pug_html = pug_html +  "<div>ok</div>";
+        if(this.block) {
+          _p = pug_html;
+          pug_html = "";
+          this.block();
+          b = pug_html;
+          pug_html = _p;
+          pug_html += "[[[" + md5(b) + "]]]";
+        }
+      };
+    +blah()
+      h1 hi
+    custom-element hi
+    mixin block
+      h1
+        block
+    +block()
+      div
+        div hi
+        script(type="module"): :lsc
+          console.log(10)
+
