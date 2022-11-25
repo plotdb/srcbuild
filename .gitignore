@@ -3,3 +3,8 @@
 *.log
 secret.*
 node_modules
+web/static/**/*.html
+web/.view
+web/.bundle-dep
+alt/.view
+alt/.bundle-dep
