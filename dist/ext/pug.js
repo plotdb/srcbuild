@@ -85,6 +85,59 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         }
       }],
       filters: import$(this.filters || {}, {
+        'bundle': function(text, _opt){
+          var opts, ret;
+          opts = Array.isArray(_opt.options)
+            ? _opt.options
+            : [_opt.options];
+          opts = opts.filter(function(it){
+            var ref$;
+            return it && ((ref$ = it.type) === 'js' || ref$ === 'css' || ref$ === 'block');
+          });
+          ret = "";
+          opts.forEach(function(o){
+            var list, name, str, spec, des;
+            list = o.files;
+            if (o.type === 'block' && !(o.sort != null || o.sort)) {
+              list.sort(function(a, b){
+                var i$, ref$, len$, n, ref1$, c, d;
+                for (i$ = 0, len$ = (ref$ = ['ns', 'name', 'version', 'path']).length; i$ < len$; ++i$) {
+                  n = ref$[i$];
+                  ref1$ = [a[n] || '', b[n] || ''], c = ref1$[0], d = ref1$[1];
+                  if (c < d) {
+                    return -1;
+                  } else if (c > d) {
+                    return 1;
+                  }
+                }
+                return 0;
+              });
+            }
+            if (o.name) {
+              name = o.name;
+            } else {
+              str = (o.type + ":") + list.join(';');
+              name = crypto.createHash('md5').update(str).digest('hex');
+              name = path.join(name.substring(0, 4), name.substring(4));
+            }
+            spec = {
+              name: name,
+              type: o.type,
+              codesrc: list,
+              specsrc: _opt.filename
+            };
+            this$.bundler.addSpec(spec);
+            des = this$.bundler.desPath(spec);
+            if (o.type === 'css') {
+              return ret += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + des.desMin + "\"/>";
+            } else if (o.type === 'js') {
+              return ret += "<script type=\"text/javascript\" src=\"" + des.desMin + "\"></script>";
+            } else if (o.type === 'block') {
+              return ret += "<link rel=\"block\" href=\"/assets/bundle/" + des.desMin + "\">";
+            }
+          });
+          return ret;
+        },
         'lsc': function(text, opt){
           var code, codeMin;
           code = livescript.compile(text, {
@@ -145,19 +198,23 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         return crypto.createHash('md5').update(str).digest('hex');
       },
       hashfile: function(arg$){
-        var type, name, files;
-        type = arg$.type, name = arg$.name, files = arg$.files;
+        var type, name, files, src, spec;
+        type = arg$.type, name = arg$.name, files = arg$.files, src = arg$.src;
         if (!this$.bundler) {
           return;
         }
         files = files.map(function(file){
-          return path.relative(this$.base, path.join(this$.desdir, file));
+          return {
+            file: path.relative(this$.base, path.join(this$.desdir, file))
+          };
         });
-        return this$.bundler.build(files, {
+        spec = {
           type: type,
           name: name,
-          odb: true
-        });
+          codesrc: files,
+          specsrc: [src]
+        };
+        return this$.bundler.addSpec(spec);
       }
     };
     if (this.i18n) {
@@ -190,14 +247,15 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
     return ret;
   },
   getDependencies: function(file){
-    var code, ret, root;
+    var code, opt, ret, root;
     code = fs.readFileSync(file);
-    ret = pug.compileClientWithDependenciesTracked(code, import$({
+    opt = import$({
       basedir: path.resolve(this.srcdir),
       filename: file,
       doctype: 'html',
       compileDebug: false
-    }, this.extapi));
+    }, this.extapi);
+    ret = pug.compileClientWithDependenciesTracked(code, opt);
     root = path.resolve('.') + '/';
     return (ret.dependencies || []).map(function(it){
       return it.replace(root, '');
@@ -249,7 +307,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           : ((ref$ = this$.i18n).options || (ref$.options = {})).fallbackLng)
         : Promise.resolve();
       return p.then(function(){
-        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, code, t1, desvdir, ret, t2, desdir, e, results$ = [];
+        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, code, t1, desvdir, opt, ret, t2, desdir, e, results$ = [];
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
           ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
@@ -265,12 +323,13 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             if (!this$._noView) {
               desvdir = path.dirname(desv);
               fsExtra.ensureDirSync(desvdir);
-              ret = pug.compileClient(code, import$({
+              opt = import$({
                 filename: src,
                 basedir: path.resolve(this$.srcdir),
                 doctype: 'html',
                 compileDebug: false
-              }, this$.extapi));
+              }, this$.extapi);
+              ret = pug.compileClient(code, opt);
               ret = " (function() { " + ret + "; module.exports = template; })() ";
               fs.writeFileSync(desv, ret);
               t2 = Date.now();
@@ -279,12 +338,13 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             if (!/^\/\/- ?view ?/.exec(code)) {
               desdir = path.dirname(desh);
               fsExtra.ensureDirSync(desdir);
-              fs.writeFileSync(desh, pug.render(code, import$({
+              opt = import$({
                 filename: src,
                 basedir: path.resolve(this$.srcdir),
                 doctype: 'html',
                 compileDebug: false
-              }, this$.extapi)));
+              }, this$.extapi);
+              fs.writeFileSync(desh, pug.render(code, opt));
               t2 = Date.now();
               results$.push(this$.log.info(src + " --> " + desh + " ( " + (t2 - t1) + "ms )"));
             }

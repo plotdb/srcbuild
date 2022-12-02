@@ -39,6 +39,42 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           return dom
       }]
       filters: (@filters or {}) <<< do
+        'bundle': (text, _opt) ~>
+          # we keep bundling in complie time so it will be
+          #  - fast, since we won't trigger bundling each time a view is rendered.
+          #  - safe, since it's impossible to change the files to bundle and load.
+          opts = if Array.isArray(_opt.options) => _opt.options else [_opt.options]
+          opts = opts.filter(->it and it.type in <[js css block]>)
+          ret = ""
+          opts.for-each (o) ~>
+            list = o.files
+            # sorting makes the md5 hashing stable, but order in js/css is important
+            # so we onlt sort block bundling here.
+            if o.type == \block and !(o.sort? or o.sort) =>
+              list.sort (a,b) ->
+                for n in <[ns name version path]> =>
+                  [c,d] = [a[n] or '', b[n] or '']
+                  if c < d => return -1 else if c > d => return 1
+                return 0
+            if o.name => name = o.name
+            else
+              # add `type` so we never have to worry if bundle names collides between different types
+              # TODO how to avoid the still possible hash collision?
+              str = "#{o.type}:" + list.join(';')
+              name = crypto.createHash \md5 .update str .digest \hex
+              # 2 level hierarchy
+              name = path.join(name.substring(0,4), name.substring(4))
+            spec = {name: name, type: o.type, codesrc: list, specsrc: _opt.filename}
+            @bundler.add-spec spec
+            des = @bundler.des-path spec
+            if o.type == \css
+              ret += """<link rel="stylesheet" type="text/css" href="#{des.des-min}"/>"""
+            else if o.type == \js
+              ret += """<script type="text/javascript" src="#{des.des-min}"></script>"""
+            else if o.type == \block
+              # TODO
+              ret += """<link rel="block" href="/assets/bundle/#{des.des-min}">"""
+          return ret
         'lsc': (text, opt) ->
           code = livescript.compile(text,{bare:true,header:false})
           # we may need an option to turn off uglify-js but for now we will enable it by default.
@@ -70,10 +106,11 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               @log.error "[ERROR@#it]: ", e
         return ret
       md5: (str) -> crypto.createHash \md5 .update str .digest \hex
-      hashfile: ({type, name, files}) ~>
+      hashfile: ({type, name, files, src}) ~>
         if !@bundler => return
-        files = files.map (file) ~> path.relative(@base, path.join(@desdir, file))
-        @bundler.build files, {type, name, odb: true}
+        files = files.map (file) ~> {file: path.relative(@base, path.join(@desdir, file))}
+        spec = {type, name, codesrc: files, specsrc: [src]}
+        @bundler.add-spec spec
 
     if @i18n =>
       ret.i18n = ~> @i18n.t((it or '').trim!)
@@ -91,10 +128,13 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
 
   get-dependencies: (file) ->
     code = fs.read-file-sync file
-    ret = pug.compileClientWithDependenciesTracked(
-      code,
-      {basedir: path.resolve(@srcdir), filename: file, doctype: \html, compileDebug: false} <<< @extapi
-    )
+    opt = {
+      basedir: path.resolve(@srcdir)
+      filename: file
+      doctype: \html
+      compileDebug: false
+    } <<< @extapi
+    ret = pug.compileClientWithDependenciesTracked(code, opt)
     root = path.resolve('.') + '/'
     return (ret.dependencies or []).map ~> it.replace(root, '')
 
@@ -142,12 +182,15 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             if !@_no-view =>
               desvdir = path.dirname(desv)
               fs-extra.ensure-dir-sync desvdir
-              ret = pug.compileClient(
-                code, {
-                  filename: src, basedir: path.resolve(@srcdir), doctype: \html
-                  compileDebug: false
-                } <<< @extapi
-              )
+
+              opt = {
+                filename: src
+                basedir: path.resolve(@srcdir)
+                doctype: \html
+                compileDebug: false
+              } <<< @extapi
+
+              ret = pug.compileClient(code, opt)
               ret = """ (function() { #ret; module.exports = template; })() """
               fs.write-file-sync desv, ret
               t2 = Date.now!
@@ -155,14 +198,15 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             if !(/^\/\/- ?view ?/.exec(code)) =>
               desdir = path.dirname(desh)
               fs-extra.ensure-dir-sync desdir
-              fs.write-file-sync(
-                desh, pug.render(
-                  code, {
-                    filename: src, basedir: path.resolve(@srcdir), doctype: \html
-                    compileDebug: false
-                  } <<< @extapi
-                )
-              )
+
+              opt = {
+                filename: src
+                basedir: path.resolve(@srcdir)
+                doctype: \html
+                compileDebug: false
+              } <<< @extapi
+
+              fs.write-file-sync( desh, pug.render(code, opt) )
               t2 = Date.now!
               @log.info "#src --> #desh ( #{t2 - t1}ms )"
           catch e
