@@ -26,3 +26,20 @@ html
         script(type="module"): :lsc
           console.log(10)
 
+    mixin filter(name)
+      - 
+        _p = pug_html;
+        pug_html = '';
+        block();
+        c = pug_html;
+        pug_html = _p;
+      != filters[name](c, options || attributes)
+    +filter("md").
+      # hello
+    :md:lsc
+      h = 1
+    //-
+      [
+        {"name": "ldcover"}, 
+        {"name": "ldcolor"}
+      ]
