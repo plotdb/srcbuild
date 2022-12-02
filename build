@@ -14,7 +14,8 @@ echo "building pug-cli ..."
 echo "#!/usr/bin/env node" > ./dist/pug-cli
 cat ./dist/pug-cli.js >> ./dist/pug-cli
 echo "prepare local test files ..."
-mkdir -p "node_modules/@plotdb/srcbuild/dist"
-cp dist/lib.pug "node_modules/@plotdb/srcbuild/dist"
+rm -rf "node_modules/@plotdb/srcbuild/dist"
+mkdir -p "node_modules/@plotdb/srcbuild"
+ln -s ../../../dist "node_modules/@plotdb/srcbuild/dist"
 chmod 755 ./dist/pug-cli
 wait
