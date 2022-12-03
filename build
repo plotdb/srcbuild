@@ -18,5 +18,5 @@ rm -rf "node_modules/@plotdb/srcbuild/dist"
 mkdir -p "node_modules/@plotdb/srcbuild"
 ln -s ../../../dist "node_modules/@plotdb/srcbuild/dist"
 chmod 755 ./dist/pug-cli
-echo "note: building may trigger a full rebuild of src tree, due to `lib.pug` update."
+echo "note: building may trigger a full rebuild of src tree, due to 'lib.pug' update."
 wait
