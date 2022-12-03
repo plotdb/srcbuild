@@ -48,6 +48,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           ret = ""
           opts.for-each (o) ~>
             list = o.files
+            list.for-each (d) -> if !d.type => d.type = o.type
             # sorting makes the md5 hashing stable, but order in js/css is important
             # so we onlt sort block bundling here.
             if o.type == \block and !(o.sort? or o.sort) =>
@@ -108,7 +109,13 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       md5: (str) -> crypto.createHash \md5 .update str .digest \hex
       hashfile: ({type, name, files, src}) ~>
         if !@bundler => return
-        files = files.map (file) ~> {file: path.relative(@base, path.join(@desdir, file))}
+        files = files.map (file) ~>
+          if /^https?:/.exec(file.url or file) =>
+            return file.url or file
+          if file.url or typeof(file) == \string =>
+            return path.relative(@base, path.join(@desdir, file.url or file))
+          if typeof(file) == \object => return {type} <<< file
+          return file
         spec = {type, name, codesrc: files, specsrc: [src]}
         @bundler.add-spec spec
 

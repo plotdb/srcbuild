@@ -98,6 +98,11 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           opts.forEach(function(o){
             var list, name, str, spec, des;
             list = o.files;
+            list.forEach(function(d){
+              if (!d.type) {
+                return d.type = o.type;
+              }
+            });
             if (o.type === 'block' && !(o.sort != null || o.sort)) {
               list.sort(function(a, b){
                 var i$, ref$, len$, n, ref1$, c, d;
@@ -204,9 +209,18 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           return;
         }
         files = files.map(function(file){
-          return {
-            file: path.relative(this$.base, path.join(this$.desdir, file))
-          };
+          if (/^https?:/.exec(file.url || file)) {
+            return file.url || file;
+          }
+          if (file.url || typeof file === 'string') {
+            return path.relative(this$.base, path.join(this$.desdir, file.url || file));
+          }
+          if (typeof file === 'object') {
+            return import$({
+              type: type
+            }, file);
+          }
+          return file;
         });
         spec = {
           type: type,
