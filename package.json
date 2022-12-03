@@ -50,6 +50,7 @@
     "@plotdb/block": "^4.7.9",
     "express": "^4.18.2",
     "fedep": "^1.1.7",
+    "jsdom": "^20.0.3",
     "ldcolor": "^1.0.0",
     "ldcover": "^3.2.1",
     "ldloader": "^3.0.1",
