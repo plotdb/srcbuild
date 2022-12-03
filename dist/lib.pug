@@ -36,9 +36,10 @@ mixin script(os,cfg)
   if cfg && cfg.pack
     -
       var name = md5(str);
-      var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
+      //var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
+      var fn = "/assets/bundle/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
       hashfile({type: "js", name: name, files: urls, src: locals.filename});
-    script(type="text/javascript",src=filename + libLoader._v)
+    script(type="text/javascript",src=fn + libLoader._v)
 
 mixin css(os,cfg)
   -
@@ -63,6 +64,7 @@ mixin css(os,cfg)
   if cfg && cfg.pack
     -
       var name = md5(str);
-      var filename = "/css/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
+      //var filename = "/css/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
+      var fn = "/assets/bundle/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
       hashfile({type: "css", name: name, files: urls, src: locals.filename});
-    link(rel="stylesheet",type="text/css",href=filename + libLoader._v)
+    link(rel="stylesheet",type="text/css",href=fn + libLoader._v)
