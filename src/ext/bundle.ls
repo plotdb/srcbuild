@@ -6,7 +6,7 @@ spec = (o = {}) ->
   @mgr = o.manager
   @log = o.log
   @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc}
-  @ <<< @o{type, name, dirty}
+  @ <<< @o{type, name}
   @codesrc = new Set(@o.codesrc or [])
   @specsrc = new Set(@o.specsrc or [])
   @
@@ -82,7 +82,7 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     if !(s = @_[k]) =>
       @add o
       return true
-    if Array.from(s.codesrc).join(',') == (o.codesrc or []).join(',') => dirty = true
+    if Array.from(s.codesrc).join(',') != (o.codesrc or []).join(',') => dirty = true
     s.codesrc = new Set(o.codesrc or [])
     (if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]).for-each (n) ->
       if !s.specsrc.has n => dirty := true

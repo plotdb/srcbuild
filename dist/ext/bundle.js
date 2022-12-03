@@ -20,7 +20,6 @@ spec = function(o){
   }));
   this.type = (ref$ = this.o).type;
   this.name = ref$.name;
-  this.dirty = ref$.dirty;
   this.codesrc = new Set(this.o.codesrc || []);
   this.specsrc = new Set(this.o.specsrc || []);
   return this;
@@ -177,7 +176,7 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
       this.add(o);
       return true;
     }
-    if (Array.from(s.codesrc).join(',') === (o.codesrc || []).join(',')) {
+    if (Array.from(s.codesrc).join(',') !== (o.codesrc || []).join(',')) {
       dirty = true;
     }
     s.codesrc = new Set(o.codesrc || []);
