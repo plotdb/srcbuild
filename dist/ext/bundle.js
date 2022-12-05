@@ -16,10 +16,12 @@ spec = function(o){
     name: o.name,
     type: o.type,
     codesrc: o.codesrc,
-    specsrc: o.specsrc
+    specsrc: o.specsrc,
+    ext: o.ext
   }));
   this.type = (ref$ = this.o).type;
   this.name = ref$.name;
+  this.ext = ref$.ext;
   this.codesrc = new Set(this.o.codesrc || []);
   this.specsrc = new Set(this.o.specsrc || []);
   return this;
@@ -30,7 +32,7 @@ spec.prototype = import$(Object.create(Object.prototype), {
     return ref$ = {
       codesrc: Array.from(this.codesrc),
       specsrc: Array.from(this.specsrc)
-    }, ref$.type = this.type, ref$.name = this.name, ref$.dirty = this.dirty, ref$;
+    }, ref$.type = this.type, ref$.name = this.name, ref$.ext = this.ext, ref$;
   },
   cacheFn: function(){
     return this.mgr.getCacheName(this);
@@ -188,6 +190,7 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
       }
       return s.specsrc.add(n);
     });
+    s.ext = o.ext ? JSON.parse(JSON.stringify(o.ext)) : null;
     if (dirty) {
       this.setDirty(s);
     }
@@ -404,13 +407,29 @@ build.prototype = import$(Object.create(base.prototype), {
     });
     return opts.map(function(o){
       var codesrc, specsrc, ref$, ref1$;
-      codesrc = (o.codesrc || (o.codesrc = [])).map(function(f){
-        return this$.getPath(f);
-      });
-      specsrc = Array.isArray(o.specsrc)
-        ? o.specsrc
-        : [o.specsrc];
-      return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$));
+      if (o.type === 'block') {
+        return this$.mgr.bundle({
+          blocks: o.codesrc || (o.codesrc = [])
+        }).then(function(r){
+          var codesrc, specsrc, ext, ref$, ref1$;
+          codesrc = (r.deps.js.concat(r.deps.css, r.deps.block)).map(function(f){
+            return this$.getPath(f);
+          });
+          specsrc = Array.isArray(o.specsrc)
+            ? o.specsrc
+            : [o.specsrc];
+          ext = r.deps.block || [];
+          return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$.ext = ext, ref$));
+        });
+      } else {
+        codesrc = (o.codesrc || (o.codesrc = [])).map(function(f){
+          return this$.getPath(f);
+        });
+        specsrc = Array.isArray(o.specsrc)
+          ? o.specsrc
+          : [o.specsrc];
+        return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$.ext = o.ext, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$));
+      }
     });
   },
   getDependencies: function(file){
@@ -436,11 +455,12 @@ build.prototype = import$(Object.create(base.prototype), {
     return this.specmgr.touchCode(files);
   },
   desPath: function(arg$){
-    var name, type, _desdir, des, desMin, desdir;
+    var name, type, _desdir, ext, des, desMin, desdir;
     name = arg$.name, type = arg$.type;
     _desdir = path.join(this.desdir, 'assets', 'bundle');
-    des = path.join(_desdir, name + "." + type);
-    desMin = path.join(_desdir, name + ".min." + type);
+    ext = type === 'block' ? 'html' : type;
+    des = path.join(_desdir, name + "." + ext);
+    desMin = path.join(_desdir, name + ".min." + ext);
     desdir = path.dirname(des);
     return {
       desdir: desdir,
@@ -451,7 +471,7 @@ build.prototype = import$(Object.create(base.prototype), {
   buildBySpec: function(spec){
     var this$ = this;
     return Promise.resolve().then(function(){
-      var name, type, t1, srcs, ref$, desdir, des, desMin;
+      var name, type, t1, srcs, ref$, desdir, des, desMin, ext;
       name = spec.name, type = spec.type;
       t1 = Date.now();
       srcs = Array.from(spec.codesrc);
@@ -459,45 +479,59 @@ build.prototype = import$(Object.create(base.prototype), {
         name: name,
         type: type
       }), desdir = ref$.desdir, des = ref$.des, desMin = ref$.desMin;
+      ext = type === 'block' ? 'html' : type;
       return fs.ensureDir(desdir).then(function(){
         var ps;
-        ps = srcs.map(function(f){
-          return fs.readFile(f)['catch'](function(){
-            return "";
-          }).then(function(b){
+        if (type === 'block') {
+          return this$.mgr.bundle({
+            blocks: spec.ext
+          }).then(function(arg$){
+            var code;
+            code = arg$.code;
+            return Promise.all([fs.writeFile(des, code), fs.writeFile(desMin, code)]);
+          });
+        } else {
+          ps = srcs.map(function(f){
+            var fMin;
+            f = f.replace(".min." + ext, "." + ext);
+            fMin = f.replace("." + ext, ".min." + ext);
             return fs.readFile(f)['catch'](function(){
               return "";
-            }).then(function(bm){
-              return {
-                name: f,
-                code: b.toString(),
-                codeMin: bm.toString()
-              };
+            }).then(function(b){
+              return fs.readFile(fMin)['catch'](function(){
+                return "";
+              }).then(function(bm){
+                return {
+                  name: f,
+                  code: b.toString(),
+                  codeMin: bm.toString()
+                };
+              });
             });
           });
-        });
-        return Promise.all(ps);
-      }).then(function(ret){
-        var normal, minified;
-        normal = ret.map(function(it){
-          return it.code || it.codeMin;
-        }).join('');
-        minified = ret.map(function(o){
-          if (o.codeMin) {
-            return o.codeMin;
-          }
-          if (!o.code) {
-            return "";
-          }
-          return type === 'js'
-            ? uglifyJs.minify(o.code).code
-            : type === 'css'
-              ? uglifycss.processString(o.code, {
-                uglyComments: true
-              })
-              : o.code;
-        }).join('');
-        return Promise.all([fs.writeFile(des, normal), fs.writeFile(desMin, minified)]);
+          return Promise.all(ps).then(function(ret){
+            var normal, minified;
+            normal = ret.map(function(it){
+              return it.code || it.codeMin;
+            }).join('');
+            minified = ret.map(function(o){
+              if (o.codeMin) {
+                return o.codeMin;
+              }
+              if (!o.code) {
+                return "";
+              }
+              return type === 'js'
+                ? uglifyJs.minify(o.code).code
+                : type === 'css'
+                  ? uglifycss.processString(o.code, {
+                    uglyComments: true
+                  })
+                  : o.code;
+            }).join('');
+            return Promise.all([fs.writeFile(des, normal), fs.writeFile(desMin, minified)]);
+          });
+        }
       }).then(function(){
         var ret, size, sizeMin, elapsed;
         ret = {

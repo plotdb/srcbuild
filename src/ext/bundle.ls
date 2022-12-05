@@ -5,8 +5,8 @@ fs = require "fs-extra"
 spec = (o = {}) ->
   @mgr = o.manager
   @log = o.log
-  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc}
-  @ <<< @o{type, name}
+  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc,ext}
+  @ <<< @o{type, name, ext}
   @codesrc = new Set(@o.codesrc or [])
   @specsrc = new Set(@o.specsrc or [])
   @
@@ -16,7 +16,7 @@ spec.prototype = Object.create(Object.prototype) <<< do
     {} <<< {
       codesrc: Array.from(@codesrc)
       specsrc: Array.from(@specsrc)
-    } <<< @{type, name, dirty}
+    } <<< @{type, name, ext}
   cache-fn: -> @mgr.get-cache-name @
   sync-cache: ->
     fn = @cache-fn!
@@ -87,6 +87,8 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     (if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]).for-each (n) ->
       if !s.specsrc.has n => dirty := true
       s.specsrc.add n
+    s.ext = if o.ext => JSON.parse(JSON.stringify(o.ext)) else null
+
     if dirty => @set-dirty s
     return dirty
 
@@ -202,9 +204,17 @@ build.prototype = Object.create(base.prototype) <<< do
   add-spec: (opts = []) ->
     opts = (if Array.isArray(opts) => opts else [opts]).filter(->it)
     opts.map (o) ~>
-      codesrc = o.[]codesrc.map (f) ~> @get-path f
-      specsrc = if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]
-      @specmgr.update({} <<< o{name,type} <<< {codesrc, specsrc})
+      if o.type == \block =>
+        @mgr.bundle blocks: o.[]codesrc
+          .then (r) ~>
+            codesrc = (r.deps.js ++ r.deps.css ++ r.deps.block).map (f) ~> @get-path f
+            specsrc = if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]
+            ext = r.deps.block or []
+            @specmgr.update({} <<< o{name,type} <<< {codesrc, specsrc, ext})
+      else
+        codesrc = o.[]codesrc.map (f) ~> @get-path f
+        specsrc = if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]
+        @specmgr.update({} <<< o{name,type,ext} <<< {codesrc, specsrc})
 
   get-dependencies: (file) -> return []
   is-supported: (file) -> return @specmgr.has-code file
@@ -217,8 +227,9 @@ build.prototype = Object.create(base.prototype) <<< do
 
   des-path: ({name, type}) ->
     _desdir = path.join(@desdir, \assets, \bundle)
-    des = path.join(_desdir, "#name.#type")
-    des-min = path.join(_desdir, "#name.min.#type")
+    ext = if type == \block => \html else type
+    des = path.join(_desdir, "#name.#ext")
+    des-min = path.join(_desdir, "#name.min.#ext")
     # we may have subfolders in name
     desdir = path.dirname(des)
     return {desdir, des, des-min}
@@ -229,31 +240,43 @@ build.prototype = Object.create(base.prototype) <<< do
     t1 = Date.now!
     srcs = Array.from spec.codesrc
     {desdir, des, des-min} = @des-path {name, type}
+    ext = if type == \block => \html else type
     fs.ensure-dir desdir
       .then ~>
-        ps = srcs.map (f) ->
-          fs.read-file f
-            .catch -> ""
-            .then (b) ->
-              fs.read-file f
-                .catch -> ""
-                .then (bm) ->
-                  {name: f, code: b.toString!, code-min: bm.toString!}
-        Promise.all ps
-      .then (ret) ~>
-        normal = ret.map(->it.code or it.code-min).join('')
-        minified = ret
-          .map (o) ->
-            if o.code-min => return o.code-min
-            if !o.code => return ""
-            return if type == \js => uglify-js.minify(o.code).code
-            else if type == \css => uglifycss.processString(o.code, uglyComments: true)
-            else o.code
-          .join('')
-        Promise.all [
-          fs.write-file(des, normal)
-          fs.write-file(des-min, minified)
-        ]
+        if type == \block =>
+          @mgr.bundle blocks: spec.ext
+            .then ({code}) ->
+              Promise.all [
+                fs.write-file(des, code)
+                fs.write-file(des-min, code)
+              ]
+        else
+          ps = srcs.map (f) ->
+            f = f.replace "\.min.#ext", ".#ext"
+            f-min = f.replace "\.#ext", ".min.#ext"
+            fs.read-file f
+              .catch -> return ""
+              .then (b) ->
+                fs.read-file f-min
+                  .catch -> ""
+                  .then (bm) ->
+                    {name: f, code: b.toString!, code-min: bm.toString!}
+          Promise.all ps
+            .then (ret) ~>
+              normal = ret.map(->it.code or it.code-min).join('')
+              minified = ret
+                .map (o) ~>
+                  if o.code-min => return o.code-min
+                  if !o.code => return ""
+                  return if type == \js => uglify-js.minify(o.code).code
+                  else if type == \css => uglifycss.processString(o.code, uglyComments: true)
+                  else o.code
+                .join('')
+              Promise.all [
+                fs.write-file(des, normal)
+                fs.write-file(des-min, minified)
+              ]
+
       .then ~>
         ret = do
           type: type, name: name
