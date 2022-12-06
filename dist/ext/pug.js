@@ -96,7 +96,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           });
           ret = "";
           opts.forEach(function(o){
-            var list, name, str, spec, des;
+            var list, name, str, spec, des, relDesMin, relDes;
             list = o.files;
             list.forEach(function(d){
               if (!d.type) {
@@ -133,12 +133,14 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             };
             this$.bundler.addSpec(spec);
             des = this$.bundler.desPath(spec);
+            relDesMin = path.relative(this$.desdir, des.desMin);
+            relDes = path.relative(this$.desdir, des.des);
             if (o.type === 'css') {
-              return ret += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + des.desMin + "\"/>";
+              return ret += "<link rel=\"stylesheet\" type=\"text/css\" href=\"/" + relDesMin + "\"/>";
             } else if (o.type === 'js') {
-              return ret += "<script type=\"text/javascript\" src=\"" + des.desMin + "\"></script>";
+              return ret += "<script type=\"text/javascript\" src=\"/" + relDesMin + "\"></script>";
             } else if (o.type === 'block') {
-              return ret += "<link rel=\"block\" href=\"/assets/bundle/" + des.desMin + "\">";
+              return ret += "<link rel=\"block\" href=\"/" + relDesMin + "\">";
             }
           });
           return ret;
