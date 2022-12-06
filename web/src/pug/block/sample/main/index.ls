@@ -1,9 +1,9 @@
 module.exports =
   pkg: dependencies: [
-    {name: "ldloader", type: \js}
-    {name: "ldloader", type: \css}
+    {name: "ldcover", type: \js}
+    {name: "ldcover", type: \css, global: true}
   ]
-  init: ({ctx}) ->
-    {ldloader} = ctx
-    ldld = new ldloader className: 'ldld full'
-    ldld.on!
+  init: ({ctx, root}) ->
+    {ldcover} = ctx
+    ldcv = new ldcover root: root
+    ldcv.get!

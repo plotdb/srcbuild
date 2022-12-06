@@ -1,0 +1,24 @@
+doctype html
+html
+  head
+    :bundle(options = {type: "css", files: [
+      {name: "bootstrap", path: "dist/css/bootstrap.min.css"},
+      {name: "@loadingio/bootstrap.ext"},
+      {name: "ldloader"}
+    ]})
+  body
+    .w-1024.rwd.mx-auto.my-4
+      h1 block bundle test
+    :bundle(options = {type: "js", files: [
+      {name: "proxise"},
+      {name: "@loadingio/debounce.js"},
+      {name: "ldloader"},
+      {name: "@plotdb/semver"},
+      {name: "@plotdb/rescope"},
+      {name: "@plotdb/csscope"},
+      {name: "@plotdb/block"}
+    ]})
+    :bundle(options = {type: "block", embed: true, files: [
+      {name: "sample"}
+    ]})
+    script(type="module"): include:lsc index.ls
