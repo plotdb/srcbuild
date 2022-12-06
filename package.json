@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@loadingio/debounce.js": "^1.0.1",
+    "@plotdb/block": "^4.7.9",
     "@plotdb/colors": "^0.0.1",
     "anymatch": "^3.1.2",
     "browserify": "^17.0.0",
@@ -47,7 +48,9 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "@plotdb/block": "^4.7.9",
+    "@plotdb/csscope": "^4.1.2",
+    "@plotdb/rescope": "^4.2.2",
+    "@plotdb/semver": "^0.0.3",
     "express": "^4.18.2",
     "fedep": "^1.1.7",
     "jsdom": "^20.0.3",
@@ -55,12 +58,18 @@
     "ldcover": "^3.2.1",
     "ldloader": "^3.0.1",
     "ldview": "^1.3.0",
+    "proxise": "^1.0.1",
     "shaderlib": "github:zbryikt/shaderlib"
   },
   "frontendDependencies": {
     "root": "web/static/assets/lib",
     "modules": [
       "@loadingio/debounce.js",
+      "proxise",
+      "@plotdb/semver",
+      "@plotdb/rescope",
+      "@plotdb/csscope",
+      "@plotdb/block",
       "ldcover",
       "ldloader",
       "ldcolor",
