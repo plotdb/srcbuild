@@ -5,10 +5,13 @@ fs = require "fs-extra"
 spec = (o = {}) ->
   @mgr = o.manager
   @log = o.log
-  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc,ext}
-  @ <<< @o{type, name, ext}
+  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc,deps}
+  @ <<< @o{type, name}
+  # source option for building ( which generates codesrc with `get-path` )
+  @src = (if Array.isArray(o.src) => o.src else [o.src]).filter(->it)
   @codesrc = new Set(@o.codesrc or [])
   @specsrc = new Set(@o.specsrc or [])
+  @deps = new Set(@o.deps or [])
   @
 
 spec.prototype = Object.create(Object.prototype) <<< do
@@ -16,7 +19,8 @@ spec.prototype = Object.create(Object.prototype) <<< do
     {} <<< {
       codesrc: Array.from(@codesrc)
       specsrc: Array.from(@specsrc)
-    } <<< @{type, name, ext}
+      deps: Array.from(@deps)
+    } <<< @{type, name}
   cache-fn: -> @mgr.get-cache-name @
   sync-cache: ->
     fn = @cache-fn!
@@ -30,12 +34,14 @@ specmgr = (o = {}) ->
   @cachedir = o.cachedir
   @evthdr = {}
   @_ = {}
-  # codesrc and specsrc are hashes for with files that should be watched in this builder.
+  # codesrc, specsrc, depsare hashes for with files that should be watched in this builder.
   #  - codesrc for set of files that are used to generate bundle files (their updates trigger rebuild)
   #  - specsrc for set of files that use (and thus define) bundles. (their updates change bundle spec)
+  #  - deps for set of files depended by some spec. this stores additional dependencies except files in codesrc.
   # the object stored in thes hashes are Set object containing the spec key linked with these files.
   @codesrc = {}
   @specsrc = {}
+  @deps = {}
   # keep track of keys of spec been updated. batch write back cache by specmgr to reduce file access.
   @_dirty = new Set!
   @
@@ -63,17 +69,18 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     @_[k] = s = new spec({log: @log, manager: @} <<< o)
     s.codesrc.for-each (n) ~> @link codesrc: n, spec: s
     s.specsrc.for-each (n) ~> @link specsrc: n, spec: s
+    s.deps.for-each (n) ~> @link deps: n, spec: s
     if !opt.init => @set-dirty s
     s
   set: (o = {}, opt = {}) -> @add o, ({force: true} <<< opt)
-  has-code: (f) -> !!@codesrc[f]
+  has-code: (f) -> !!@codesrc[f] or !!@deps[f]
   touch-code: (files) ->
     files = if Array.isArray(files) => files else [files]
     keys = new Set!
     files.map (f) ~>
       if typeof(f) == \object => f = f.file
-      if !@codesrc[f] => return
-      Array.from(@codesrc[f]).for-each (k) ~> keys.add k
+      if @codesrc[f] => Array.from(@codesrc[f]).for-each (k) ~> keys.add k
+      if @deps[f] => Array.from(@deps[f]).for-each (k) ~> keys.add k
     @fire \build-by-spec, Array.from(keys).map((k) ~> @get k)
 
   update: (o = {}) ->
@@ -83,11 +90,17 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
       @add o
       return true
     if Array.from(s.codesrc).join(',') != (o.codesrc or []).join(',') => dirty = true
+    if s.src.join(',') != (o.src or []).join(',') => dirty = true
+    s.src = (if Array.isArray(o.src) => o.src else [o.src]).filter(->it)
     s.codesrc = new Set(o.codesrc or [])
+    s.deps = new Set(o.deps or [])
     (if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]).for-each (n) ->
       if !s.specsrc.has n => dirty := true
       s.specsrc.add n
-    s.ext = if o.ext => JSON.parse(JSON.stringify(o.ext)) else null
+
+    s.codesrc.for-each (n) ~> @link codesrc: n, spec: s
+    s.specsrc.for-each (n) ~> @link specsrc: n, spec: s
+    s.deps.for-each (n) ~> @link deps: n, spec: s
 
     if dirty => @set-dirty s
     return dirty
@@ -97,16 +110,17 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     s = @_[@key o]
     s.codesrc.for-each (n) ~> @unlink codesrc: n, spec: s
     s.specsrc.for-each (n) ~> @unlink specsrc: n, spec: s
+    s.deps.for-each (n) ~> @unlink deps: n, spec: s
     @set-dirty o
 
   link: (o = {}) ->
-    f = if o.codesrc => \codesrc else \specsrc
+    f = if o.codesrc => \codesrc else if o.specsrc => \specsrc else \deps
     s = if @[f][o[f]] => that else @[f][o[f]] = new Set!
     if !s => return
     s.add(@key o.spec)
 
   unlink: (o = {}) ->
-    f = if o.codesrc => \codesrc else \specsrc
+    f = if o.codesrc => \codesrc else if o.specsrc => \specsrc else \deps
     if !(s = @[f][o[f]]) => return
     s.remove @key o.spec
     if s.size => return
@@ -179,8 +193,8 @@ build.prototype = Object.create(base.prototype) <<< do
       for type of cfg =>
         for name, list of cfg[type] =>
           # this should be the only place we need to join `reldir` with a file name.
-          list = list.map (n) ~> if typeof(n) == \string => path.join(@reldir, n) else @get-path n
-          @specmgr.set { type, name, codesrc: list, specsrc: [fn] }, {init: true}
+          codesrc = list.map (n) ~> if typeof(n) == \string => path.join(@reldir, n) else @get-path n
+          @specmgr.set { type, name, src: list, codesrc: codesrc, specsrc: [fn] }, {init: true}
 
   load-caches: ->
     if !fs.exists-sync(@cachedir) => return
@@ -207,14 +221,17 @@ build.prototype = Object.create(base.prototype) <<< do
       if o.type == \block =>
         @mgr.bundle blocks: o.[]codesrc
           .then (r) ~>
-            codesrc = (r.deps.js ++ r.deps.css ++ r.deps.block).map (f) ~> @get-path f
+            if !(r and r.deps) => @log.warn "block bundle requires block > 4.8.0 to work properly"
+            deps = r.deps or {js: [], css: [], block: []}
+            deps = (deps.js ++ deps.css ++ deps.block).map (f) ~> @get-path f
+            codesrc = o.[]src.map (f) ~> @get-path f
             specsrc = if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]
-            ext = r.deps.block or []
-            @specmgr.update({} <<< o{name,type} <<< {codesrc, specsrc, ext})
+            @specmgr.update({} <<< o{name,type,src} <<< {codesrc, specsrc, deps})
       else
-        codesrc = o.[]codesrc.map (f) ~> @get-path f
-        specsrc = if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]
-        @specmgr.update({} <<< o{name,type,ext} <<< {codesrc, specsrc})
+        codesrc = o.[]src.map (f) ~> @get-path f
+        specsrc = (if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]).filter(->it)
+        deps = (if Array.isArray(o.deps) => o.deps else [o.deps]).filter(->it)
+        @specmgr.update({} <<< o{name,type,src} <<< {codesrc, specsrc, deps})
 
   get-dependencies: (file) -> return []
   is-supported: (file) -> return @specmgr.has-code file
@@ -244,8 +261,9 @@ build.prototype = Object.create(base.prototype) <<< do
     fs.ensure-dir desdir
       .then ~>
         if type == \block =>
-          @mgr.bundle blocks: spec.ext
-            .then ({code}) ->
+          @mgr.bundle blocks: spec.src
+            .then (ret) ->
+              code = ret.code or ret
               Promise.all [
                 fs.write-file(des, code)
                 fs.write-file(des-min, code)

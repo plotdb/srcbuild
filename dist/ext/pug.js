@@ -128,7 +128,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             spec = {
               name: name,
               type: o.type,
-              codesrc: list,
+              src: list,
               specsrc: _opt.filename
             };
             this$.bundler.addSpec(spec);
@@ -213,7 +213,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
             return file.url || file;
           }
           if (file.url || typeof file === 'string') {
-            return path.relative(this$.base, path.join(this$.desdir, file.url || file));
+            return path.join(this$.desdir, file.url || file);
           }
           if (typeof file === 'object') {
             return import$({
@@ -225,7 +225,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         spec = {
           type: type,
           name: name,
-          codesrc: files,
+          src: files,
           specsrc: [src]
         };
         return this$.bundler.addSpec(spec);

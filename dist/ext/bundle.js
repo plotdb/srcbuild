@@ -17,13 +17,18 @@ spec = function(o){
     type: o.type,
     codesrc: o.codesrc,
     specsrc: o.specsrc,
-    ext: o.ext
+    deps: o.deps
   }));
   this.type = (ref$ = this.o).type;
   this.name = ref$.name;
-  this.ext = ref$.ext;
+  this.src = (Array.isArray(o.src)
+    ? o.src
+    : [o.src]).filter(function(it){
+    return it;
+  });
   this.codesrc = new Set(this.o.codesrc || []);
   this.specsrc = new Set(this.o.specsrc || []);
+  this.deps = new Set(this.o.deps || []);
   return this;
 };
 spec.prototype = import$(Object.create(Object.prototype), {
@@ -31,8 +36,9 @@ spec.prototype = import$(Object.create(Object.prototype), {
     var ref$;
     return ref$ = {
       codesrc: Array.from(this.codesrc),
-      specsrc: Array.from(this.specsrc)
-    }, ref$.type = this.type, ref$.name = this.name, ref$.ext = this.ext, ref$;
+      specsrc: Array.from(this.specsrc),
+      deps: Array.from(this.deps)
+    }, ref$.type = this.type, ref$.name = this.name, ref$;
   },
   cacheFn: function(){
     return this.mgr.getCacheName(this);
@@ -54,6 +60,7 @@ specmgr = function(o){
   this._ = {};
   this.codesrc = {};
   this.specsrc = {};
+  this.deps = {};
   this._dirty = new Set();
   return this;
 };
@@ -133,6 +140,12 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
         spec: s
       });
     });
+    s.deps.forEach(function(n){
+      return this$.link({
+        deps: n,
+        spec: s
+      });
+    });
     if (!opt.init) {
       this.setDirty(s);
     }
@@ -146,7 +159,7 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
     }, opt));
   },
   hasCode: function(f){
-    return !!this.codesrc[f];
+    return !!this.codesrc[f] || !!this.deps[f];
   },
   touchCode: function(files){
     var keys, this$ = this;
@@ -158,19 +171,23 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
       if (typeof f === 'object') {
         f = f.file;
       }
-      if (!this$.codesrc[f]) {
-        return;
+      if (this$.codesrc[f]) {
+        Array.from(this$.codesrc[f]).forEach(function(k){
+          return keys.add(k);
+        });
       }
-      return Array.from(this$.codesrc[f]).forEach(function(k){
-        return keys.add(k);
-      });
+      if (this$.deps[f]) {
+        return Array.from(this$.deps[f]).forEach(function(k){
+          return keys.add(k);
+        });
+      }
     });
     return this.fire('build-by-spec', Array.from(keys).map(function(k){
       return this$.get(k);
     }));
   },
   update: function(o){
-    var k, dirty, s;
+    var k, dirty, s, this$ = this;
     o == null && (o = {});
     k = this.key(o);
     dirty = false;
@@ -181,7 +198,16 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
     if (Array.from(s.codesrc).join(',') !== (o.codesrc || []).join(',')) {
       dirty = true;
     }
+    if (s.src.join(',') !== (o.src || []).join(',')) {
+      dirty = true;
+    }
+    s.src = (Array.isArray(o.src)
+      ? o.src
+      : [o.src]).filter(function(it){
+      return it;
+    });
     s.codesrc = new Set(o.codesrc || []);
+    s.deps = new Set(o.deps || []);
     (Array.isArray(o.specsrc)
       ? o.specsrc
       : [o.specsrc]).forEach(function(n){
@@ -190,7 +216,24 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
       }
       return s.specsrc.add(n);
     });
-    s.ext = o.ext ? JSON.parse(JSON.stringify(o.ext)) : null;
+    s.codesrc.forEach(function(n){
+      return this$.link({
+        codesrc: n,
+        spec: s
+      });
+    });
+    s.specsrc.forEach(function(n){
+      return this$.link({
+        specsrc: n,
+        spec: s
+      });
+    });
+    s.deps.forEach(function(n){
+      return this$.link({
+        deps: n,
+        spec: s
+      });
+    });
     if (dirty) {
       this.setDirty(s);
     }
@@ -216,12 +259,20 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
         spec: s
       });
     });
+    s.deps.forEach(function(n){
+      return this$.unlink({
+        deps: n,
+        spec: s
+      });
+    });
     return this.setDirty(o);
   },
   link: function(o){
     var f, s, that;
     o == null && (o = {});
-    f = o.codesrc ? 'codesrc' : 'specsrc';
+    f = o.codesrc
+      ? 'codesrc'
+      : o.specsrc ? 'specsrc' : 'deps';
     s = (that = this[f][o[f]])
       ? that
       : this[f][o[f]] = new Set();
@@ -233,7 +284,9 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
   unlink: function(o){
     var f, s, ref$, key$, ref1$;
     o == null && (o = {});
-    f = o.codesrc ? 'codesrc' : 'specsrc';
+    f = o.codesrc
+      ? 'codesrc'
+      : o.specsrc ? 'specsrc' : 'deps';
     if (!(s = this[f][o[f]])) {
       return;
     }
@@ -315,7 +368,7 @@ build.prototype = import$(Object.create(base.prototype), {
     });
   },
   loadCfg: function(){
-    var cfgs, cfg, e, i$, len$, ref$, fn, lresult$, type, lresult1$, name, list, results$ = [], this$ = this;
+    var cfgs, cfg, e, i$, len$, ref$, fn, lresult$, type, lresult1$, name, list, codesrc, results$ = [], this$ = this;
     cfgs = [['', this.defcfg]];
     if (this.cfgfn && fs.existsSync(this.cfgfn)) {
       try {
@@ -334,11 +387,12 @@ build.prototype = import$(Object.create(base.prototype), {
         lresult1$ = [];
         for (name in ref$ = cfg[type]) {
           list = ref$[name];
-          list = list.map(fn$);
+          codesrc = list.map(fn$);
           lresult1$.push(this.specmgr.set({
             type: type,
             name: name,
-            codesrc: list,
+            src: list,
+            codesrc: codesrc,
             specsrc: [fn]
           }, {
             init: true
@@ -406,29 +460,46 @@ build.prototype = import$(Object.create(base.prototype), {
       return it;
     });
     return opts.map(function(o){
-      var codesrc, specsrc, ref$, ref1$;
+      var codesrc, specsrc, deps, ref$, ref1$;
       if (o.type === 'block') {
         return this$.mgr.bundle({
           blocks: o.codesrc || (o.codesrc = [])
         }).then(function(r){
-          var codesrc, specsrc, ext, ref$, ref1$;
-          codesrc = (r.deps.js.concat(r.deps.css, r.deps.block)).map(function(f){
+          var deps, codesrc, specsrc, ref$, ref1$;
+          if (!(r && r.deps)) {
+            this$.log.warn("block bundle requires block > 4.8.0 to work properly");
+          }
+          deps = r.deps || {
+            js: [],
+            css: [],
+            block: []
+          };
+          deps = (deps.js.concat(deps.css, deps.block)).map(function(f){
+            return this$.getPath(f);
+          });
+          codesrc = (o.src || (o.src = [])).map(function(f){
             return this$.getPath(f);
           });
           specsrc = Array.isArray(o.specsrc)
             ? o.specsrc
             : [o.specsrc];
-          ext = r.deps.block || [];
-          return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$.ext = ext, ref$));
+          return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$.src = o.src, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$.deps = deps, ref$));
         });
       } else {
-        codesrc = (o.codesrc || (o.codesrc = [])).map(function(f){
+        codesrc = (o.src || (o.src = [])).map(function(f){
           return this$.getPath(f);
         });
-        specsrc = Array.isArray(o.specsrc)
+        specsrc = (Array.isArray(o.specsrc)
           ? o.specsrc
-          : [o.specsrc];
-        return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$.ext = o.ext, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$));
+          : [o.specsrc]).filter(function(it){
+          return it;
+        });
+        deps = (Array.isArray(o.deps)
+          ? o.deps
+          : [o.deps]).filter(function(it){
+          return it;
+        });
+        return this$.specmgr.update((ref$ = (ref1$ = {}, ref1$.name = o.name, ref1$.type = o.type, ref1$.src = o.src, ref1$), ref$.codesrc = codesrc, ref$.specsrc = specsrc, ref$.deps = deps, ref$));
       }
     });
   },
@@ -484,10 +555,10 @@ build.prototype = import$(Object.create(base.prototype), {
         var ps;
         if (type === 'block') {
           return this$.mgr.bundle({
-            blocks: spec.ext
-          }).then(function(arg$){
+            blocks: spec.src
+          }).then(function(ret){
             var code;
-            code = arg$.code;
+            code = ret.code || ret;
             return Promise.all([fs.writeFile(des, code), fs.writeFile(desMin, code)]);
           });
         } else {

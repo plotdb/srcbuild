@@ -65,7 +65,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               name = crypto.createHash \md5 .update str .digest \hex
               # 2 level hierarchy
               name = path.join(name.substring(0,4), name.substring(4))
-            spec = {name: name, type: o.type, codesrc: list, specsrc: _opt.filename}
+            spec = {name: name, type: o.type, src: list, specsrc: _opt.filename}
             @bundler.add-spec spec
             des = @bundler.des-path spec
             if o.type == \css
@@ -113,10 +113,10 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           if /^https?:/.exec(file.url or file) =>
             return file.url or file
           if file.url or typeof(file) == \string =>
-            return path.relative(@base, path.join(@desdir, file.url or file))
+            return path.join(@desdir, file.url or file)
           if typeof(file) == \object => return {type} <<< file
           return file
-        spec = {type, name, codesrc: files, specsrc: [src]}
+        spec = {type, name, src: files, specsrc: [src]}
         @bundler.add-spec spec
 
     if @i18n =>
