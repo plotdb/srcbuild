@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.57 (upcoming)
+
+ - support block bundling with `bundle` filter
+
+
 ## v0.0.56
 
  - audit fix vulnerability about dependency `minimatch`
