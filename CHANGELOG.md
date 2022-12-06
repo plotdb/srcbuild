@@ -3,6 +3,7 @@
 ## v0.0.57 (upcoming)
 
  - support block bundling with `bundle` filter
+ - upgrade dependencies
 
 
 ## v0.0.56
