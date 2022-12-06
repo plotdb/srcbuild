@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@loadingio/debounce.js": "^1.0.1",
-    "@plotdb/block": "^4.7.9",
+    "@plotdb/block": "^4.8.0",
     "@plotdb/colors": "^0.0.1",
     "anymatch": "^3.1.2",
     "browserify": "^17.0.0",
