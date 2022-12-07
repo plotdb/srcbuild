@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.0.58
+
+ - separate ext/base init into `initAdapter` and `initVars` so we can update vars first
+ - bundler ext:
+   - accept function as manager parameter in bundler.
+   - `relativePath` is now by default true 
+   - tweak error logging for bundling issue
+
+
 ## v0.0.57
 
  - breaking change: in bundler, path of `configFile` should now be relative to `base`.
