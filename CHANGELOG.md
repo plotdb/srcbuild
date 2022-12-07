@@ -1,6 +1,6 @@
 # Change Log
 
-## v0.0.57 (upcoming)
+## v0.0.57
 
  - breaking change: in bundler, path of `configFile` should now be relative to `base`.
  - support block bundling with `bundle` filter
