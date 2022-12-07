@@ -75,7 +75,6 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             else if o.type == \js
               ret += """<script type="text/javascript" src="/#{rel-des-min}"></script>"""
             else if o.type == \block
-              # TODO
               ret += """<link rel="block" href="/#{rel-des-min}">"""
           return ret
         'lsc': (text, opt) ->
