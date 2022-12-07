@@ -5,7 +5,7 @@ fs = require "fs-extra"
 spec = (o = {}) ->
   @mgr = o.manager
   @log = o.log
-  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc,deps}
+  @o = JSON.parse JSON.stringify o{name,type,codesrc,specsrc,deps,src}
   @ <<< @o{type, name}
   # source option for building ( which generates codesrc with `get-path` )
   @src = (if Array.isArray(o.src) => o.src else [o.src]).filter(->it)
@@ -20,6 +20,7 @@ spec.prototype = Object.create(Object.prototype) <<< do
       codesrc: Array.from(@codesrc)
       specsrc: Array.from(@specsrc)
       deps: Array.from(@deps)
+      src: Array.from(@src)
     } <<< @{type, name}
   cache-fn: -> @mgr.get-cache-name @
   sync-cache: ->
@@ -137,7 +138,9 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     delete @specsrc[n]
 
 build = (o={}) ->
-  @mgr = o.manager
+  opt = {srcdir: 'static', desdir: 'static'} <<< o
+  @init-vars opt
+  @mgr = if typeof(o.manager) == \function => o.manager({base: @base}) else o.manager
   # this is the optional bundle specs provided directly through constructor
   @defcfg = o.config or null
   # this is the directory storing dependency metadata cache
@@ -149,11 +152,11 @@ build = (o={}) ->
   # the directory relation between cfgfn and the code source files is kinda undefined
   # so we use reldir to explicitly define it.
   @reldir = if typeof(o.relative-path) == \string => o.relative-path
-  else if o.relative-path and @cfgfn => path.dirname(@cfgfn)
+  else if (!(o.relative-path?) or o.relative-path) and @cfgfn => path.dirname(@cfgfn)
   else process.cwd!
   @log = o.logger or aux.logger
   @reload!
-  @init({srcdir: 'static', desdir: 'static'} <<< o)
+  @init-adapter opt
   @
 
 build.prototype = Object.create(base.prototype) <<< do
@@ -171,8 +174,8 @@ build.prototype = Object.create(base.prototype) <<< do
 
   reload: ->
     @reset!
-    @load-cfg init: true
     @load-caches!
+    @load-cfg init: true
 
   reset: ->
     # specmgr manages lifecycle of specs
@@ -263,6 +266,8 @@ build.prototype = Object.create(base.prototype) <<< do
     fs.ensure-dir desdir
       .then ~>
         if type == \block =>
+          if !@mgr or !@mgr.bundle =>
+            throw new Error("block bundling requires manager of @plotdb/block provided via bundler option.")
           @mgr.bundle blocks: spec.src
             .then (ret) ->
               code = ret.code or ret
@@ -309,6 +314,6 @@ build.prototype = Object.create(base.prototype) <<< do
         ret
       .catch (e) ~>
         @log.error "#des failed: ".red
-        @log.error e.message.toString!
+        @log.error {err: e}, e.message.toString!
 
 module.exports = build

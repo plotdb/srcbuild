@@ -103,6 +103,10 @@ Except common options, each builder may support different options:
      - `false`: all files in `configFile` are relative to current working directory.
      - `true`: all files in `configFile` are relative to the directory containing `bundle.json`
      - or, specific a path as the relative root.
+   - `manager`: block manager, optional. required for @plotdb/block bundling.
+     - can be either an `block.manager` object, or ...
+     - a function returning such object which accepts an object with following fields as parameter:
+       - `base`: the base dir of this bundle.
    - `config`: bundle configuration in following format:
      {
        "css": {

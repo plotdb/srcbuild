@@ -17,7 +17,8 @@ spec = function(o){
     type: o.type,
     codesrc: o.codesrc,
     specsrc: o.specsrc,
-    deps: o.deps
+    deps: o.deps,
+    src: o.src
   }));
   this.type = (ref$ = this.o).type;
   this.name = ref$.name;
@@ -37,7 +38,8 @@ spec.prototype = import$(Object.create(Object.prototype), {
     return ref$ = {
       codesrc: Array.from(this.codesrc),
       specsrc: Array.from(this.specsrc),
-      deps: Array.from(this.deps)
+      deps: Array.from(this.deps),
+      src: Array.from(this.src)
     }, ref$.type = this.type, ref$.name = this.name, ref$;
   },
   cacheFn: function(){
@@ -315,22 +317,29 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
   }
 });
 build = function(o){
+  var opt;
   o == null && (o = {});
-  this.mgr = o.manager;
+  opt = import$({
+    srcdir: 'static',
+    desdir: 'static'
+  }, o);
+  this.initVars(opt);
+  this.mgr = typeof o.manager === 'function'
+    ? o.manager({
+      base: this.base
+    })
+    : o.manager;
   this.defcfg = o.config || null;
   this.cachedir = path.join(o.base || '.', '.bundle-dep');
   this.cfgfn = o.configFile ? path.join(o.base || '.', o.configFile) : null;
   this.reldir = typeof o.relativePath === 'string'
     ? o.relativePath
-    : o.relativePath && this.cfgfn
+    : (!(o.relativePath != null) || o.relativePath) && this.cfgfn
       ? path.dirname(this.cfgfn)
       : process.cwd();
   this.log = o.logger || aux.logger;
   this.reload();
-  this.init(import$({
-    srcdir: 'static',
-    desdir: 'static'
-  }, o));
+  this.initAdapter(opt);
   return this;
 };
 build.prototype = import$(Object.create(base.prototype), {
@@ -352,10 +361,10 @@ build.prototype = import$(Object.create(base.prototype), {
   },
   reload: function(){
     this.reset();
-    this.loadCfg({
+    this.loadCaches();
+    return this.loadCfg({
       init: true
     });
-    return this.loadCaches();
   },
   reset: function(){
     var this$ = this;
@@ -558,6 +567,9 @@ build.prototype = import$(Object.create(base.prototype), {
       return fs.ensureDir(desdir).then(function(){
         var ps;
         if (type === 'block') {
+          if (!this$.mgr || !this$.mgr.bundle) {
+            throw new Error("block bundling requires manager of @plotdb/block provided via bundler option.");
+          }
           return this$.mgr.bundle({
             blocks: spec.src
           }).then(function(ret){
@@ -622,7 +634,9 @@ build.prototype = import$(Object.create(base.prototype), {
         return ret;
       })['catch'](function(e){
         this$.log.error((des + " failed: ").red);
-        return this$.log.error(e.message.toString());
+        return this$.log.error({
+          err: e
+        }, e.message.toString());
       });
     });
   }
