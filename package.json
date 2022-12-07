@@ -52,6 +52,7 @@
     "@plotdb/csscope": "^4.1.2",
     "@plotdb/rescope": "^4.2.2",
     "@plotdb/semver": "^0.0.3",
+    "@loadingio/ldquery": "^3.0.4",
     "bootstrap": "^4.6.1",
     "express": "^4.18.2",
     "fedep": "^1.1.7",
@@ -67,6 +68,7 @@
     "root": "web/static/assets/lib",
     "modules": [
       "bootstrap",
+      "@loadingio/ldquery",
       "@loadingio/bootstrap.ext",
       "@loadingio/debounce.js",
       "proxise",
