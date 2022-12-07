@@ -14,10 +14,17 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
   resolve: (file) ->
 
   init: (opt={}) ->
+    @init-vars opt
+    @init-adapter opt
+    @
+
+  init-vars: (opt={}) ->
     @log = opt.logger or aux.logger
     @base = opt.base or @base or '.'
     @srcdir = path.normalize(path.join(@base, opt.srcdir or @srcdir or '.'))
     @desdir = path.normalize(path.join(@base, opt.desdir or @desdir or '.'))
+
+  init-adapter: (opt={}) ->
     @adapter = new adapter do
       base: @srcdir
       get-dependencies: ~> @get-dependencies it
@@ -26,7 +33,6 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
       purge: (files) ~> @purge files
       resolve: (file) ~> @resolve file
     @adapter.init!
-    @
   get-adapter: -> @adapter
 
 module.exports = basebuild

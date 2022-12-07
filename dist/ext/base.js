@@ -17,12 +17,21 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
   purge: function(files){},
   resolve: function(file){},
   init: function(opt){
-    var this$ = this;
+    opt == null && (opt = {});
+    this.initVars(opt);
+    this.initAdapter(opt);
+    return this;
+  },
+  initVars: function(opt){
     opt == null && (opt = {});
     this.log = opt.logger || aux.logger;
     this.base = opt.base || this.base || '.';
     this.srcdir = path.normalize(path.join(this.base, opt.srcdir || this.srcdir || '.'));
-    this.desdir = path.normalize(path.join(this.base, opt.desdir || this.desdir || '.'));
+    return this.desdir = path.normalize(path.join(this.base, opt.desdir || this.desdir || '.'));
+  },
+  initAdapter: function(opt){
+    var this$ = this;
+    opt == null && (opt = {});
     this.adapter = new adapter({
       base: this.srcdir,
       getDependencies: function(it){
@@ -41,8 +50,7 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
         return this$.resolve(file);
       }
     });
-    this.adapter.init();
-    return this;
+    return this.adapter.init();
   },
   getAdapter: function(){
     return this.adapter;
