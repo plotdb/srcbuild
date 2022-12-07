@@ -8,5 +8,10 @@
     "demo": [
       "static/css/index.min.css"
     ]
+  },
+  "block": {
+    "demo": [
+      {"name": "sample"}
+    ]
   }
 }

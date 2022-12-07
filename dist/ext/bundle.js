@@ -318,8 +318,8 @@ build = function(o){
   o == null && (o = {});
   this.mgr = o.manager;
   this.defcfg = o.config || null;
-  this.cachedir = path.join(o.base, '.bundle-dep');
-  this.cfgfn = o.configFile || null;
+  this.cachedir = path.join(o.base || '.', '.bundle-dep');
+  this.cfgfn = o.configFile ? path.join(o.base || '.', o.configFile) : null;
   this.reldir = typeof o.relativePath === 'string'
     ? o.relativePath
     : o.relativePath && this.cfgfn
@@ -352,7 +352,9 @@ build.prototype = import$(Object.create(base.prototype), {
   },
   reload: function(){
     this.reset();
-    this.loadCfg();
+    this.loadCfg({
+      init: true
+    });
     return this.loadCaches();
   },
   reset: function(){
@@ -367,9 +369,12 @@ build.prototype = import$(Object.create(base.prototype), {
       });
     });
   },
-  loadCfg: function(){
+  loadCfg: function(opt){
     var cfgs, cfg, e, i$, len$, ref$, fn, lresult$, type, lresult1$, name, list, codesrc, results$ = [], this$ = this;
-    cfgs = [['', this.defcfg]];
+    opt == null && (opt = {});
+    cfgs = opt.init
+      ? [['', this.defcfg]]
+      : [];
     if (this.cfgfn && fs.existsSync(this.cfgfn)) {
       try {
         cfg = JSON.parse(fs.readFileSync(this.cfgfn).toString());
@@ -388,14 +393,13 @@ build.prototype = import$(Object.create(base.prototype), {
         for (name in ref$ = cfg[type]) {
           list = ref$[name];
           codesrc = list.map(fn$);
-          lresult1$.push(this.specmgr.set({
+          lresult1$.push(this.specmgr.update({
             type: type,
             name: name,
             src: list,
             codesrc: codesrc,
+            deps: [fn],
             specsrc: [fn]
-          }, {
-            init: true
           }));
         }
         lresult$.push(lresult1$);
@@ -521,7 +525,7 @@ build.prototype = import$(Object.create(base.prototype), {
     if (files.filter(function(it){
       return it.file === this$.cfgfn;
     }).length) {
-      return this.reload();
+      return this.loadCfg();
     }
     return this.specmgr.touchCode(files);
   },

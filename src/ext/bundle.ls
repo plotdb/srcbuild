@@ -141,9 +141,9 @@ build = (o={}) ->
   # this is the optional bundle specs provided directly through constructor
   @defcfg = o.config or null
   # this is the directory storing dependency metadata cache
-  @cachedir = path.join(o.base, '.bundle-dep')
+  @cachedir = path.join(o.base or '.', '.bundle-dep')
   # this file keeps optional bundle specs expliticly defines by developer.
-  @cfgfn = o.config-file or null
+  @cfgfn = if o.config-file => path.join(o.base or '.', o.config-file) else null
   # this helps us converting files in cfgfn to the correct path
   # since cfgfn may locate in any dir,
   # the directory relation between cfgfn and the code source files is kinda undefined
@@ -171,7 +171,7 @@ build.prototype = Object.create(base.prototype) <<< do
 
   reload: ->
     @reset!
-    @load-cfg!
+    @load-cfg init: true
     @load-caches!
 
   reset: ->
@@ -180,8 +180,8 @@ build.prototype = Object.create(base.prototype) <<< do
     @specmgr.on \build-by-spec, (specs) ~>
       specs.for-each (spec) ~> @build-by-spec spec
 
-  load-cfg: ->
-    cfgs = [['',@defcfg]]
+  load-cfg: (opt = {}) ->
+    cfgs = if opt.init => [['',@defcfg]] else []
     if (@cfgfn and fs.exists-sync(@cfgfn)) =>
       try
         cfg = JSON.parse fs.read-file-sync(@cfgfn).toString!
@@ -194,7 +194,9 @@ build.prototype = Object.create(base.prototype) <<< do
         for name, list of cfg[type] =>
           # this should be the only place we need to join `reldir` with a file name.
           codesrc = list.map (n) ~> if typeof(n) == \string => path.join(@reldir, n) else @get-path n
-          @specmgr.set { type, name, src: list, codesrc: codesrc, specsrc: [fn] }, {init: true}
+          # add fn in `deps` to ensure it's supported and trigger building when updated
+          # so we can call load-cfg when file update.
+          @specmgr.update { type, name, src: list, codesrc: codesrc, deps: [fn], specsrc: [fn] }
 
   load-caches: ->
     if !fs.exists-sync(@cachedir) => return
@@ -239,7 +241,7 @@ build.prototype = Object.create(base.prototype) <<< do
   build: (files, opt) ->
     force = if typeof(opt) == \boolean => opt else false
     if !opt? => opt = {}
-    if files.filter(~> it.file == @cfgfn).length => return @reload!
+    if files.filter(~> it.file == @cfgfn).length => return @load-cfg!
     @specmgr.touch-code files
 
   des-path: ({name, type}) ->

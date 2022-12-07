@@ -31,7 +31,7 @@ i18n({enabled:true})
       base: <[web alt]>
       i18n
       bundle:
-        config-file: 'web/bundle.json'
+        config-file: 'bundle.json'
         relative-path: true
         manager: mgr
     }
