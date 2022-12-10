@@ -131,16 +131,20 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
               src: list,
               specsrc: _opt.filename
             };
-            this$.bundler.addSpec(spec);
-            des = this$.bundler.desPath(spec);
-            relDesMin = path.relative(this$.desdir, des.desMin);
-            relDes = path.relative(this$.desdir, des.des);
-            if (o.type === 'css') {
-              return ret += "<link rel=\"stylesheet\" type=\"text/css\" href=\"/" + relDesMin + "\"/>";
-            } else if (o.type === 'js') {
-              return ret += "<script type=\"text/javascript\" src=\"/" + relDesMin + "\"></script>";
-            } else if (o.type === 'block') {
-              return ret += "<link rel=\"block\" href=\"/" + relDesMin + "\">";
+            if (this$.bundler) {
+              this$.bundler.addSpec(spec);
+              des = this$.bundler.desPath(spec);
+              relDesMin = path.relative(this$.desdir, des.desMin);
+              relDes = path.relative(this$.desdir, des.des);
+              if (o.type === 'css') {
+                return ret += "<link rel=\"stylesheet\" type=\"text/css\" href=\"/" + relDesMin + "\"/>";
+              } else if (o.type === 'js') {
+                return ret += "<script type=\"text/javascript\" src=\"/" + relDesMin + "\"></script>";
+              } else if (o.type === 'block') {
+                return ret += "<link rel=\"block\" href=\"/" + relDesMin + "\">";
+              }
+            } else {
+              return ret += "<!-- no bundler available for bundling " + name + " in type " + o.type + " -->";
             }
           });
           return ret;

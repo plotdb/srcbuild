@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.59
+
+ - fix bug: bunlder filter should only work if bundler is provided and available
+
+
 ## v0.0.58
 
  - separate ext/base init into `initAdapter` and `initVars` so we can update vars first

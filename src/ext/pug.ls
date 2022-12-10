@@ -66,16 +66,19 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               # 2 level hierarchy
               name = path.join(name.substring(0,4), name.substring(4))
             spec = {name: name, type: o.type, src: list, specsrc: _opt.filename}
-            @bundler.add-spec spec
-            des = @bundler.des-path spec
-            rel-des-min = path.relative(@desdir, des.des-min)
-            rel-des = path.relative(@desdir, des.des)
-            if o.type == \css
-              ret += """<link rel="stylesheet" type="text/css" href="/#{rel-des-min}"/>"""
-            else if o.type == \js
-              ret += """<script type="text/javascript" src="/#{rel-des-min}"></script>"""
-            else if o.type == \block
-              ret += """<link rel="block" href="/#{rel-des-min}">"""
+            if @bundler =>
+              @bundler.add-spec spec
+              des = @bundler.des-path spec
+              rel-des-min = path.relative(@desdir, des.des-min)
+              rel-des = path.relative(@desdir, des.des)
+              if o.type == \css
+                ret += """<link rel="stylesheet" type="text/css" href="/#{rel-des-min}"/>"""
+              else if o.type == \js
+                ret += """<script type="text/javascript" src="/#{rel-des-min}"></script>"""
+              else if o.type == \block
+                ret += """<link rel="block" href="/#{rel-des-min}">"""
+            else ret += "<!-- no bundler available for bundling #name in type #{o.type} -->"
+
           return ret
         'lsc': (text, opt) ->
           code = livescript.compile(text,{bare:true,header:false})
