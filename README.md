@@ -245,29 +245,13 @@ Additionally, you can also use a list of modules:
 
 Use the second option object to specify additional parameters, including:
 
- - `pack`: *experimental* default false. Enable auto packing or not.
+ - `pack`: *experimental* *deprecated* default false. Enable auto packing or not.
    - if true, enable auto packing which trigger bundling automatically to a filename from md5 of all script urls.
    - require `bundler` option in pugbuild constructor.
    - doesn't work with external urls.
    - there are still issues about rebuilding and build from view.
+   - replaced by `bundle` filter, which runs in compile time.
  - `min`: default true. When true, use minimized packed file with pack option.
-
-#### Auto Packing Issue (TODO)
-
-Auto packing works fine with static built files. However, there are two issues:
-
- - it's kinda tricky to trigger a pack file rebuild if the pack file is mssing - since there is no clue from the hashed file name to the urls used.
- - may slow down dynamic generated views since each rendering checks if the bundled file should be rebuilt against its source files.
- - doesn't work for external urls.
-
-For the above issues, we can:
-
- - add additional information ( such as source pug name base64 string ) in the hashed file name for reversed resolving all source files
- - completely ignore auto packing with dynamic view rendering, instead we support ODB of bundle files
- - extend bundler to support remote file fetching
-
-These solutions will be left in TODOs.
-
 
 
 ### Filters
@@ -277,6 +261,11 @@ Following formats and filters are supported:
  - `lsc`: transpile content from livescript to JavaScript.
  - `stylus`: transpile content from `stylus` to `CSS`.
  - `md`: transpile content from `markdown` to `HTML`.
+ - `bundle`: bundle files including js, css or block. usage sample:
+
+    :bundle(options = {type: "block", files: [ { bid }, ...  ]})
+
+
 
 
 ### JS functions
