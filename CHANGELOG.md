@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.61 (upcoming)
+
+ - auto set type when loading config if type is not defined 
+
+
 ## v0.0.60
 
  - upgrade dependencies `@plotdb/block`, `@plotdb/rescope` and `@plotdb/csscope`

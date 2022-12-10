@@ -196,7 +196,10 @@ build.prototype = Object.create(base.prototype) <<< do
       for type of cfg =>
         for name, list of cfg[type] =>
           # this should be the only place we need to join `reldir` with a file name.
-          codesrc = list.map (n) ~> if typeof(n) == \string => path.join(@reldir, n) else @get-path n
+          codesrc = list.map (n) ~>
+            if typeof(n) == \string => return path.join(@reldir, n)
+            if !n.type => n.type = type
+            @get-path n
           # add fn in `deps` to ensure it's supported and trigger building when updated
           # so we can call load-cfg when file update.
           @specmgr.update { type, name, src: list, codesrc: codesrc, deps: [fn], specsrc: [fn] }

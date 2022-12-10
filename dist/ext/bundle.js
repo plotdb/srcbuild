@@ -419,9 +419,11 @@ build.prototype = import$(Object.create(base.prototype), {
     function fn$(n){
       if (typeof n === 'string') {
         return path.join(this$.reldir, n);
-      } else {
-        return this$.getPath(n);
       }
+      if (!n.type) {
+        n.type = type;
+      }
+      return this$.getPath(n);
     }
   },
   loadCaches: function(){
