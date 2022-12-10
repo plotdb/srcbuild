@@ -541,18 +541,13 @@ build.prototype = import$(Object.create(base.prototype), {
     return this.specmgr.touchCode(files);
   },
   desPath: function(arg$){
-    var name, type, _desdir, ext, des, desMin, desdir;
+    var name, type;
     name = arg$.name, type = arg$.type;
-    _desdir = path.join(this.desdir, 'assets', 'bundle');
-    ext = type === 'block' ? 'html' : type;
-    des = path.join(_desdir, name + "." + ext);
-    desMin = path.join(_desdir, name + ".min." + ext);
-    desdir = path.dirname(des);
-    return {
-      desdir: desdir,
-      des: des,
-      desMin: desMin
-    };
+    return build.desPath({
+      desdir: this.desdir,
+      name: name,
+      type: type
+    });
   },
   buildBySpec: function(spec){
     var this$ = this;
@@ -643,6 +638,20 @@ build.prototype = import$(Object.create(base.prototype), {
     });
   }
 });
+build.desPath = function(arg$){
+  var desdir, name, type, _desdir, ext, des, desMin;
+  desdir = arg$.desdir, name = arg$.name, type = arg$.type;
+  _desdir = path.join(desdir, 'assets', 'bundle');
+  ext = type === 'block' ? 'html' : type;
+  des = path.join(_desdir, name + "." + ext);
+  desMin = path.join(_desdir, name + ".min." + ext);
+  desdir = path.dirname(des);
+  return {
+    desdir: desdir,
+    des: des,
+    desMin: desMin
+  };
+};
 module.exports = build;
 function import$(obj, src){
   var own = {}.hasOwnProperty;

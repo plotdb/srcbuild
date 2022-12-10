@@ -250,14 +250,7 @@ build.prototype = Object.create(base.prototype) <<< do
     if files.filter(~> it.file == @cfgfn).length => return @load-cfg!
     @specmgr.touch-code files
 
-  des-path: ({name, type}) ->
-    _desdir = path.join(@desdir, \assets, \bundle)
-    ext = if type == \block => \html else type
-    des = path.join(_desdir, "#name.#ext")
-    des-min = path.join(_desdir, "#name.min.#ext")
-    # we may have subfolders in name
-    desdir = path.dirname(des)
-    return {desdir, des, des-min}
+  des-path: ({name, type}) -> return build.des-path {desdir: @desdir, name, type}
 
   build-by-spec: (spec) ->
     <~ Promise.resolve!then _
@@ -318,5 +311,14 @@ build.prototype = Object.create(base.prototype) <<< do
       .catch (e) ~>
         @log.error "#des failed: ".red
         @log.error {err: e}, e.message.toString!
+
+build.des-path = ({desdir, name, type}) ->
+  _desdir = path.join(desdir, \assets, \bundle)
+  ext = if type == \block => \html else type
+  des = path.join(_desdir, "#name.#ext")
+  des-min = path.join(_desdir, "#name.min.#ext")
+  # we may have subfolders in name
+  desdir = path.dirname(des)
+  return {desdir, des, des-min}
 
 module.exports = build

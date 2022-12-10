@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.62
+
+ - use bundler class api for bundled file path if bundler is not provided in pugbuild
+
+
 ## v0.0.61
 
  - auto set type when loading config if type is not defined 

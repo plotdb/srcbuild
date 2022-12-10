@@ -1,5 +1,5 @@
 require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked crypto @plotdb/colors]>
-require! <[./base ../aux]>
+require! <[./base ../aux ./bundle]>
 
 cwd = process.cwd!
 
@@ -69,15 +69,17 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             if @bundler =>
               @bundler.add-spec spec
               des = @bundler.des-path spec
-              rel-des-min = path.relative(@desdir, des.des-min)
-              rel-des = path.relative(@desdir, des.des)
-              if o.type == \css
-                ret += """<link rel="stylesheet" type="text/css" href="/#{rel-des-min}"/>"""
-              else if o.type == \js
-                ret += """<script type="text/javascript" src="/#{rel-des-min}"></script>"""
-              else if o.type == \block
-                ret += """<link rel="block" href="/#{rel-des-min}">"""
-            else ret += "<!-- no bundler available for bundling #name in type #{o.type} -->"
+            else
+              # TODO the actual bundler may have different desdir. use this anyway for now.
+              des = bundle.des-path {desdir: @desdir} <<< spec
+            rel-des-min = path.relative(@desdir, des.des-min)
+            rel-des = path.relative(@desdir, des.des)
+            if o.type == \css
+              ret += """<link rel="stylesheet" type="text/css" href="/#{rel-des-min}"/>"""
+            else if o.type == \js
+              ret += """<script type="text/javascript" src="/#{rel-des-min}"></script>"""
+            else if o.type == \block
+              ret += """<link rel="block" href="/#{rel-des-min}">"""
 
           return ret
         'lsc': (text, opt) ->
