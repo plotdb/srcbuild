@@ -227,7 +227,7 @@ build.prototype = Object.create(base.prototype) <<< do
     opts = (if Array.isArray(opts) => opts else [opts]).filter(->it)
     opts.map (o) ~>
       if o.type == \block =>
-        @mgr.bundle blocks: o.[]codesrc
+        @mgr.bundle blocks: (o.[]src ++ o.[]codesrc)
           .then (r) ~>
             if !(r and r.deps) => @log.warn "block bundle requires block > 4.8.0 to work properly"
             deps = r.deps or {js: [], css: [], block: []}

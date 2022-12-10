@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.63
+
+ - bundle should add both codesrc and src so the dependencies will be accurate
+
+
 ## v0.0.62
 
  - use bundler class api for bundled file path if bundler is not provided in pugbuild

@@ -478,7 +478,7 @@ build.prototype = import$(Object.create(base.prototype), {
       var codesrc, specsrc, deps, ref$, ref1$;
       if (o.type === 'block') {
         return this$.mgr.bundle({
-          blocks: o.codesrc || (o.codesrc = [])
+          blocks: (o.src || (o.src = [])).concat(o.codesrc || (o.codesrc = []))
         }).then(function(r){
           var deps, codesrc, specsrc, ref$, ref1$;
           if (!(r && r.deps)) {
