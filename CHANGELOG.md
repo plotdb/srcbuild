@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.60
+
+ - upgrade dependencies `@plotdb/block`, `@plotdb/rescope` and `@plotdb/csscope`
+
+
 ## v0.0.59
 
  - fix bug: bunlder filter should only work if bundler is provided and available
