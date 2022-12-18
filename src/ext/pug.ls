@@ -25,7 +25,6 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     catch e
       throw new Error("error when looking up #fn: #{e.toString!}")
 
-
   get-extapi: ->
     ret = do
       plugins: [{
