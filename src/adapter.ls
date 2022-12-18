@@ -4,6 +4,7 @@ adapter = (opt={}) ->
   @opt = opt
   @base = opt.base or '.'
   @log = opt.logger or aux.logger
+  @init-scan = if opt.init-scan? => opt.init-scan else true
   @ignored = opt.{}watcher.ignored or []
   @depends = {on: {}, by: {}}
 
@@ -79,6 +80,7 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     @build files.map((file) -> {file, mtime: recurse(file)})
 
   init: ->
+    if !@init-scan => return Promise.resolve!
     init-builds = []
     recurse = (root) ~>
       if !fs.exists-sync(root) => return

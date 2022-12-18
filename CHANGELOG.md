@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.0.64
+
+ - fix bug: `srcbuild-pug` triggers a directory traverse which shouldn't happen.
+ - add option `initScan` for toggling initial directory traverse.
+
+
+
 ## v0.0.63
 
  - bundle should add both codesrc and src so the dependencies will be accurate

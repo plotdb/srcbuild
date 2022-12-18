@@ -7,7 +7,8 @@ yargs = require('yargs');
 pug = require('pug');
 pugbuild = require("./ext/pug");
 opt = {
-  basedir: '.'
+  basedir: '.',
+  initScan: false
 };
 argv = yargs.option('base', {
   alias: 'b',

@@ -11,6 +11,7 @@ adapter = function(opt){
   this.opt = opt;
   this.base = opt.base || '.';
   this.log = opt.logger || aux.logger;
+  this.initScan = opt.initScan != null ? opt.initScan : true;
   this.ignored = (opt.watcher || (opt.watcher = {})).ignored || [];
   this.depends = {
     on: {},
@@ -168,6 +169,9 @@ adapter.prototype = import$(Object.create(Object.prototype), {
   },
   init: function(){
     var initBuilds, recurse, t1, this$ = this;
+    if (!this.initScan) {
+      return Promise.resolve();
+    }
     initBuilds = [];
     recurse = function(root){
       var len1, len2, files, i$, len$, file, stat, e, results$ = [];

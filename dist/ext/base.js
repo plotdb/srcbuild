@@ -48,7 +48,8 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
       },
       resolve: function(file){
         return this$.resolve(file);
-      }
+      },
+      initScan: opt.initScan
     });
     return this.adapter.init();
   },

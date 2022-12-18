@@ -1,6 +1,6 @@
 require! <[fs fs-extra path yargs pug]>
 pugbuild = require "./ext/pug"
-opt = {basedir: '.'}
+opt = {basedir: '.', init-scan: false}
 argv = yargs
   .option \base, do
     alias: \b

@@ -70,6 +70,7 @@ and the common options for `init` are as following:
  - `srcdir`: directory for source files. should be relative to `base`. default `src` if omitted.
  - `desdir`: directory for built files. should be relative to `base`. default `static` if omitted.
  - `logger`: logger for log output. use `console` if omitted.
+ - `initScan`: default true. if true, run a directory scanning for files to build when adapter is initing.
 
 check `src/ext/lsc.ls` or `src/ext/pug.ls` for example.
 

@@ -32,6 +32,7 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
       build: (files) ~> @build files
       purge: (files) ~> @purge files
       resolve: (file) ~> @resolve file
+      init-scan: opt.init-scan
     @adapter.init!
   get-adapter: -> @adapter
 
