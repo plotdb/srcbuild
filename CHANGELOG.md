@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.65
+
+ - fix bug: precompiled js isn't updated even if src file updated.
+
+
 ## v0.0.64
 
  - fix bug: `srcbuild-pug` triggers a directory traverse which shouldn't happen.
