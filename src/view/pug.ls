@@ -28,10 +28,10 @@ pug-view-engine = (options) ->
     # try if precompiled pug js file available
     try
       # ( `+` converts mtime to timestamp )
-      mtime = +fs.stat-sync(desv).mtime
       mtime-src = +fs.stat-sync(src).mtime
+      mtime = +fs.stat-sync(desv).mtime
       # src file is newer - we should rebuild precompiled js
-      if mtime-src - mtime > 0 => throw new Error("src dirty")
+      if !(mtime?) or mtime-src - mtime > 0 => throw new Error("src dirty")
       # true if js is not reloaded, instead loaded directly from pugcache
       # reload pug from file to cache if:
       #  - cache is explicitly disabled ( !lc.use-cache )
@@ -56,7 +56,7 @@ pug-view-engine = (options) ->
         .then ->
           lc.mtime = mtime-src
           # see comment above for explanation
-          if !lc.use-cache or !pugcache[src] or (lc.mtime - pugcache[src].mtime > 0) =>
+          if !lc.use-cache or !pugcache[src] or !(pugcache[src].mtime?) or (lc.mtime - pugcache[src].mtime > 0) =>
             fsp.read-file src .then (buf) -> pugcache[src] = {buf}
           else Promise.resolve pugcache[src]
         .then (obj) ->

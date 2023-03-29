@@ -32,7 +32,7 @@ pugViewEngine = function(options){
     return logger.debug(f.replace(opt.basedir, '') + " served in " + t + "ms (" + type + (cache ? ' cached' : '') + ")");
   };
   return function(src, opt, cb){
-    var lc, intl, ref$, desv, desh, startTime, mtime, mtimeSrc, ret, e;
+    var lc, intl, ref$, desv, desh, startTime, mtimeSrc, mtime, ret, e;
     lc = {
       isCached: false
     };
@@ -44,9 +44,9 @@ pugViewEngine = function(options){
     ref$ = builder.map(src, ''), src = ref$.src, desv = ref$.desv, desh = ref$.desh;
     startTime = Date.now();
     try {
-      mtime = +fs.statSync(desv).mtime;
       mtimeSrc = +fs.statSync(src).mtime;
-      if (mtimeSrc - mtime > 0) {
+      mtime = +fs.statSync(desv).mtime;
+      if (!(mtime != null) || mtimeSrc - mtime > 0) {
         throw new Error("src dirty");
       }
       if (!lc.useCache || !pugcache[desv] || mtime - pugcache[desv].mtime > 0) {
@@ -70,7 +70,7 @@ pugViewEngine = function(options){
       e = e$;
       return Promise.resolve().then(function(){
         lc.mtime = mtimeSrc;
-        if (!lc.useCache || !pugcache[src] || lc.mtime - pugcache[src].mtime > 0) {
+        if (!lc.useCache || !pugcache[src] || !(pugcache[src].mtime != null) || lc.mtime - pugcache[src].mtime > 0) {
           return fsp.readFile(src).then(function(buf){
             return pugcache[src] = {
               buf: buf

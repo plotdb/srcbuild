@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.66
+
+ - fix bug: cached source file is not updated - it's mtime is not retrieved because getting desv mtime failure.
+
+
 ## v0.0.65
 
  - fix bug: precompiled js isn't updated even if src file updated.
