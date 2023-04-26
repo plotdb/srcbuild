@@ -21,6 +21,7 @@ pugbuild = function(opt){
   this.i18n = opt.i18n || null;
   this.intlbase = opt.intlbase || 'intl';
   this.filters = opt.filters || {};
+  this.locals = opt.locals || {};
   this.extapi = this.getExtapi();
   this.bundler = opt.bundler;
   this.init(import$({
@@ -55,7 +56,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
   },
   getExtapi: function(){
     var ret, this$ = this;
-    ret = {
+    ret = import$(import$({}, this.locals || {}), {
       plugins: [{
         resolve: function(){
           var args, res$, i$, to$;
@@ -239,7 +240,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         };
         return this$.bundler.addSpec(spec);
       }
-    };
+    });
     if (this.i18n) {
       ret.i18n = function(it){
         return this$.i18n.t((it || '').trim());

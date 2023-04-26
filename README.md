@@ -95,6 +95,7 @@ Except common options, each builder may support different options:
    - `noView`: default false. when true, js view files ( generated to `viewdir` ) won't be built.
    - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
    - `bundler`: default null. Auto packing will be possible only if this is provided.
+   - `locals`: additional local variables for pug context when compiling.
  - `lsc`:
    - `useGlslify`: default false. set to true if you need glslify of lsc files.
      - *NOTE* this is an experiment feature and may be removed ( move to standalone builder ) in the future.

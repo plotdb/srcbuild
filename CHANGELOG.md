@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.67
+
+ - support customized locals in pug builder
+
+
 ## v0.0.66
 
  - fix bug: cached source file is not updated - it's mtime is not retrieved because getting desv mtime failure.

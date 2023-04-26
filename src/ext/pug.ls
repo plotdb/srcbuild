@@ -7,6 +7,7 @@ pugbuild = (opt={}) ->
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
   @filters = opt.filters or {}
+  @locals = opt.locals or {}
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @bundler = opt.bundler
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
@@ -26,7 +27,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       throw new Error("error when looking up #fn: #{e.toString!}")
 
   get-extapi: ->
-    ret = do
+    ret = {} <<< (@locals or {}) <<< do
       plugins: [{
         resolve: (...args) ~> @pug-resolve.apply @, args
         postParse: (dom, opt) ->
