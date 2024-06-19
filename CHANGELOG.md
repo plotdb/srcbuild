@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.68
+
+ - upgrade dependencies for vulnerability fixing
+
+
 ## v0.0.67
 
  - support customized locals in pug builder
