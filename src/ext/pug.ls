@@ -13,6 +13,7 @@ pugbuild = (opt={}) ->
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @_no-view = opt.no-view or false
+  @_build-intl = if opt.build-intl? => opt.build-intl else true
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
@@ -226,7 +227,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             @log.error "#src failed: ".red
             @log.error e.message.toString!
 
-    lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
+    lngs = ([''] ++ (if @i18n and @_build-intl => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
       if i >= lngs.length => return Promise.resolve!
       _(lngs[i]).then -> consume(i + 1)
@@ -246,7 +247,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
             fs.unlink-sync f
             @log.warn "#src --> #f deleted.".yellow
 
-    lngs = ([''] ++ (if @i18n => @i18n.{}options.lng or [] else []))
+    lngs = ([''] ++ (if @i18n and @_build-intl => @i18n.{}options.lng or [] else []))
     consume = (i = 0) ->
       if i >= lngs.length => return Promise.resolve!
       _(lngs[i]).then -> consume(i + 1)

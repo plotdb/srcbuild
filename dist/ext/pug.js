@@ -30,6 +30,7 @@ pugbuild = function(opt){
   }, opt));
   this.viewdir = path.normalize(path.join(this.base, opt.viewdir || '.view'));
   this._noView = opt.noView || false;
+  this._buildIntl = opt.buildIntl != null ? opt.buildIntl : true;
   return this;
 };
 pugbuild.prototype = import$(Object.create(base.prototype), {
@@ -381,7 +382,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         return results$;
       });
     };
-    lngs = [''].concat(this.i18n
+    lngs = [''].concat(this.i18n && this._buildIntl
       ? ((ref$ = this.i18n).options || (ref$.options = {})).lng || []
       : []);
     consume = function(i){
@@ -423,7 +424,7 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         }
       });
     };
-    lngs = [''].concat(this.i18n
+    lngs = [''].concat(this.i18n && this._buildIntl
       ? ((ref$ = this.i18n).options || (ref$.options = {})).lng || []
       : []);
     consume = function(i){

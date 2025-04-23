@@ -83,7 +83,7 @@ Except common options, each builder may support different options:
    - `intlbase`: base dir to place i18n files. for example, `intl` part of `/intl/zh-TW/index.html`. default `intl`.
    - `i18n`: an optional i18n object having the same interface with `i18next`
      - when provided, enable i18n building with following additional features:
-       - source files will be built to multiple locations based on i18n config, such as `/intl/zh-TW/index.html`.
+       - if `buildIntl` is set to true, build source files to locations by i18n config like `/intl/zh-TW/index.html`.
        - an additional function `i18n` will be available during pug compilation.
          - `i18n(text)`: translate `text` based on the `i18n` object provided.
          - `language()`: return current language. ( e.g., `zh-TW` )
@@ -92,7 +92,10 @@ Except common options, each builder may support different options:
          - additionally, a pug filter `i18n` is also available, which can be used like:
 
              span:i18n translate this text
+
    - `noView`: default false. when true, js view files ( generated to `viewdir` ) won't be built.
+   - `buildIntl`: default true. when true build locale-based files under `static/intl/` and `.view/intl`
+     - requires `i18n`; omitted if `i18n` is not available
    - `viewdir`: default `.view`. a directory for storing prebuilt pug files ( in .js format )
    - `bundler`: default null. Auto packing will be possible only if this is provided.
    - `locals`: additional local variables for pug context when compiling.

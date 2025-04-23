@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.69
+
+ - use `buildIntl` option to toggle `intl` folder generation.
+
+
 ## v0.0.68
 
  - upgrade dependencies for vulnerability fixing
