@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.70
+
+ - upgrade i18next-fs-backend to fix vulnerability
+
+
 ## v0.0.69
 
  - use `buildIntl` option to toggle `intl` folder generation.
