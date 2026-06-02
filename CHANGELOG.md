@@ -2,7 +2,7 @@
 
 ## v0.0.70
 
- - upgrade i18next-fs-backend to fix vulnerability
+ - upgrade i18next-fs-backend and other dependencies to fix vulnerability
 
 
 ## v0.0.69
