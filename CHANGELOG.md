@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.0.71
+
+ - upgrade i18next-fs-backend to fix vulnerability
+
+
 ## v0.0.70
 
  - upgrade i18next-fs-backend and other dependencies to fix vulnerability
