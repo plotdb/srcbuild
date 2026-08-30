@@ -17,6 +17,7 @@ adapter = function(opt){
     on: {},
     by: {}
   };
+  this.failed = new Set();
   if (that = opt.getDependencies) {
     this.getDependencies = that;
   }
@@ -52,10 +53,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
       list = (this.getDependencies(file) || []).map(path.normalize);
     } catch (e$) {
       e = e$;
-      this.log.error(("analyse " + file + " failed: ").red);
-      this.log.error(e.message.toString());
-      throw ref$ = new Error(), ref$.name = 'lderror', ref$.id = 999, ref$;
-      return;
+      throw ref$ = new Error(e.message), ref$.name = 'lderror', ref$.id = 999, ref$.cause = e, ref$;
     }
     Array.from(this.depends.by[file] || []).map(function(f){
       if (this$.depends.on[f]) {
@@ -82,19 +80,52 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         mtime: 0
       };
     });
+    ret.map(function(it){
+      return this$.failed['delete'](it.file);
+    });
     return this.purge(ret);
   },
+  depMtime: function(file, memo){
+    var recurse, this$ = this;
+    memo == null && (memo = {});
+    recurse = function(f){
+      var that, stat, e;
+      if ((that = memo[f]) != null) {
+        return that;
+      }
+      memo[f] = 0;
+      if (!fs.existsSync(f)) {
+        return memo[f] = 0;
+      }
+      try {
+        stat = fs.statSync(f);
+      } catch (e$) {
+        e = e$;
+        return memo[f] = 0;
+      }
+      return memo[f] = Math.max.apply(Math, [+stat.mtime].concat(Array.from(this$.depends.by[f] || []).map(function(n){
+        return recurse(n);
+      })));
+    };
+    return recurse(file);
+  },
   change: function(files, opt){
-    var affectedFiles, mtimes, queue, ret, now, file, e, mtime, this$ = this;
+    var affectedFiles, queued, queue, push, now, file, analysed, e, memo, ret, this$ = this;
     opt == null && (opt = {});
     affectedFiles = new Set();
-    mtimes = {};
-    queue = (Array.isArray(files)
+    queued = new Set();
+    queue = [];
+    push = function(f){
+      if (!queued.has(f)) {
+        queued.add(f);
+        return queue.push(f);
+      }
+    };
+    files = Array.isArray(files)
       ? files
-      : [files]).map(function(it){
-      return it;
-    });
-    ret = [];
+      : [files];
+    files.map(push);
+    Array.from(this.failed).map(push);
     now = Date.now();
     while (queue.length) {
       file = queue.pop();
@@ -102,68 +133,52 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         continue;
       }
       if (this.isSupported(file)) {
+        analysed = true;
         try {
           this.logDependencies(file);
         } catch (e$) {
           e = e$;
-          if (e.name === 'lderror' && e.id === 999) {
-            continue;
+          if (!(e.name === 'lderror' && e.id === 999)) {
+            throw e;
           }
+          analysed = false;
+        }
+        if (analysed) {
+          if (this.failed.has(file)) {
+            this.failed['delete'](file);
+            this.log.info((file + " analysed successfully. dependency recovered.").green);
+          }
+        } else if (!this.failed.has(file)) {
+          this.failed.add(file);
+          this.log.error(("analyse " + file + " failed. will retry on next change.").red);
         }
       }
       affectedFiles.add(file);
-      mtime = opt.force
-        ? now
-        : fs.existsSync(file) ? fs.statSync(file).mtime : now;
-      if (!mtimes[file] || mtimes[file] < mtime) {
-        mtimes[file] = mtime;
-      }
       if (opt.nonRecursive) {
         continue;
       }
-      Array.from(this.depends.on[file] || []).map(fn$);
+      Array.from(this.depends.on[file] || []).map(push);
     }
+    memo = {};
     ret = Array.from(affectedFiles).filter(function(it){
       return this$.isSupported(it);
     }).map(function(it){
       return {
         file: it,
-        mtime: mtimes[it]
+        mtime: opt.force
+          ? now
+          : this$.depMtime(it, memo)
       };
     });
     return Promise.resolve(ret.length ? this.build(ret) : null);
-    function fn$(f){
-      if (!mtimes[f] || mtimes[f] < mtimes[file]) {
-        mtimes[f] = mtimes[file];
-      }
-      return queue.push(f);
-    }
   },
   dirtyCheck: function(files){
-    var mtimes, recurse, this$ = this;
-    mtimes = {};
-    recurse = function(file){
-      var that, stat, e;
-      if (that = mtimes[file]) {
-        return that;
-      }
-      if (!fs.existsSync(file)) {
-        return 0;
-      }
-      try {
-        stat = fs.statSync(file);
-      } catch (e$) {
-        e = e$;
-        return 0;
-      }
-      return mtimes[file] = Math.max.apply(Math, [+stat.mtime].concat(Array.from(this$.depends.by[file] || []).map(function(f){
-        return recurse(f);
-      })));
-    };
+    var memo, this$ = this;
+    memo = {};
     return this.build(files.map(function(file){
       return {
         file: file,
-        mtime: recurse(file)
+        mtime: this$.depMtime(file, memo)
       };
     }));
   },
@@ -205,9 +220,11 @@ adapter.prototype = import$(Object.create(Object.prototype), {
           this$.logDependencies(file);
         } catch (e$) {
           e = e$;
-          if (e.name === 'lderror' && e.id === 999) {
-            continue;
+          if (!(e.name === 'lderror' && e.id === 999)) {
+            throw e;
           }
+          this$.failed.add(file);
+          this$.log.error(("analyse " + file + " failed. will retry on next change.").red);
         }
         results$.push(initBuilds.push(file));
       }

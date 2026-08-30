@@ -7,6 +7,9 @@ adapter = (opt={}) ->
   @init-scan = if opt.init-scan? => opt.init-scan else true
   @ignored = opt.{}watcher.ignored or []
   @depends = {on: {}, by: {}}
+  # files whose `get-dependencies` threw. their edges are unknown ( or stale ), so we
+  # retry them on every change event until the analysis succeeds. see `change`.
+  @failed = new Set!
 
   if opt.get-dependencies => @get-dependencies = that
   if opt.is-supported => @is-supported = that
@@ -23,10 +26,9 @@ adapter.prototype = Object.create(Object.prototype) <<< do
   resolve: (file) -> return null
   log-dependencies: (file) ->
     try list = (@get-dependencies(file) or []).map path.normalize catch e
-      @log.error "analyse #file failed: ".red
-      @log.error e.message.toString!
-      throw new Error! <<< {name: 'lderror', id: 999}
-      return # dont touch dependency since we can't get the correct one.
+      # don't touch dependency since we can't get the correct one. keeping the previous
+      # edges is the best guess we have; the real error surfaces when `build` runs.
+      throw new Error(e.message) <<< {name: 'lderror', id: 999, cause: e}
     Array.from(@depends.by[file] or []).map (f) ~> if @depends.on[f] => @depends.on[f].delete file
     setby = @depends.by[file] = new Set!
     list.map (f) ~>
@@ -38,46 +40,72 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     ret = files
       .filter ~> @is-supported it
       .map -> {file: it, mtime: 0}
+    ret.map ~> @failed.delete it.file
     @purge ret
 
+  # the newest mtime among `file` and everything it (transitively) depends on. `memo`
+  # is shared across a batch so a module included by 200 pages is stat'ed once.
+  dep-mtime: (file, memo = {}) ->
+    recurse = (f) ~>
+      if memo[f]? => return that
+      memo[f] = 0 # placed before recursing: this is what stops a dependency cycle
+      if !fs.exists-sync(f) => return memo[f] = 0
+      try
+        stat = fs.stat-sync(f)
+      catch e # file exists, but stat-sync fails - it may be a symlink pointing to a non-existed file.
+        return memo[f] = 0
+      return memo[f] = Math.max.apply Math,
+        [+stat.mtime] ++ Array.from(@depends.by[f] or []).map((n) -> recurse n)
+    recurse file
+
   change: (files, opt = {}) ->
+    # walking the reverse graph and computing mtimes used to be the same loop, which
+    # made it enumerate *paths* rather than visit *nodes*: a dependency cycle spun
+    # forever, and a fan-in/fan-out graph ( version.pug -> base.pug -> every page, each
+    # page also including shared modules ) grew the queue multiplicatively.
+    # they are separated now: reachability first, then one memoised mtime pass.
     affected-files = new Set!
-    mtimes = {}
-    queue = (if Array.isArray(files) => files else [files]).map(->it) # array clone
-    ret = []
+    queued = new Set!
+    queue = []
+    push = (f) -> if !queued.has(f) => queued.add f; queue.push f
+    files = (if Array.isArray(files) => files else [files])
+    files.map push
+    # retry whatever failed to analyse before. a pug file that includes a broken .ls
+    # records no edges at all, so fixing the .ls would otherwise trigger nothing and the
+    # page stays stale until someone touches it by hand.
+    Array.from(@failed).map push
     now = Date.now!
     while queue.length
       file = queue.pop!
       if !fs.exists-sync file => continue
       if @is-supported file =>
+        analysed = true
         try @log-dependencies file catch e
-          if e.name == \lderror and e.id == 999 => continue
+          if !(e.name == \lderror and e.id == 999) => throw e
+          analysed = false
+        # note we do NOT skip the file when analysis failed: it still gets built, so the
+        # builder reports the actual error instead of a vague "analyse failed", and its
+        # dependents are still walked ( `depends.on` describes who depends on *this*
+        # file, and is unaffected by our failure to read this file's own dependencies ).
+        if analysed =>
+          if @failed.has file =>
+            @failed.delete file
+            @log.info "#file analysed successfully. dependency recovered.".green
+        else if !@failed.has file =>
+          @failed.add file
+          @log.error "analyse #file failed. will retry on next change.".red
       affected-files.add file
-      mtime = if opt.force => now else if fs.exists-sync(file) => fs.stat-sync(file).mtime else now
-      if !mtimes[file] or mtimes[file] < mtime => mtimes[file] = mtime
       if opt.non-recursive => continue
-      Array.from(@depends.on[file] or [])
-        .map (f) ->
-          if !mtimes[f] or mtimes[f] < mtimes[file] => mtimes[f] = mtimes[file]
-          queue.push f
+      Array.from(@depends.on[file] or []).map push
+    memo = {}
     ret = Array.from(affected-files)
       .filter ~> @is-supported it
-      .map ~> {file: it, mtime: mtimes[it]}
+      .map ~> {file: it, mtime: (if opt.force => now else @dep-mtime(it, memo))}
     Promise.resolve(if ret.length => @build ret else null)
 
   dirty-check: (files) ->
-    mtimes = {}
-    recurse = (file) ~>
-      if mtimes[file] => return that
-      if !fs.exists-sync(file) => return 0
-      try
-        stat = fs.stat-sync(file)
-      catch e # file exists, but stat-sync fails - it may be a symlink pointing to a non-existed file.
-        return 0
-      return mtimes[file] = Math.max.apply( Math,
-        [+stat.mtime] ++ Array.from(@depends.by[file] or []).map((f) -> recurse f)
-      )
-    @build files.map((file) -> {file, mtime: recurse(file)})
+    memo = {}
+    @build files.map((file) ~> {file, mtime: @dep-mtime(file, memo)})
 
   init: ->
     if !@init-scan => return Promise.resolve!
@@ -99,7 +127,9 @@ adapter.prototype = Object.create(Object.prototype) <<< do
         # this is a time consuming func call. consider ODB instead.
         # on error: simply ignore. builder will take care of it.
         try @log-dependencies file catch e
-          if e.name == \lderror and e.id == 999 => continue
+          if !(e.name == \lderror and e.id == 999) => throw e
+          @failed.add file
+          @log.error "analyse #file failed. will retry on next change.".red
         init-builds.push file
     t1 = Date.now!
     recurse @base
