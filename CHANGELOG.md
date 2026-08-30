@@ -1,5 +1,83 @@
 # Change Log
 
+## v0.1.0
+
+ - content addressing is OPT IN: `hash: {enabled: true}`. off, nothing changes.
+   it rewrites the url of every generated asset in every page and buys nothing until
+   the edge serves the addressed form with a long max-age, so a project turns it on
+   when it has done that.
+ - two modes. `filename` writes `<name>.<hash>[.min].<ext>` next to the output: a url
+   names exactly one byte sequence, so it can be immutable, at the cost of expiring old
+   copies. `query` points at `<name>.min.js?v=<hash>` instead: nothing accumulates and
+   nothing 404s, but stale html silently gets the current bytes and some CDNs ignore the
+   query when caching.
+ - the plain name is always written and always current in both modes - already deployed
+   html, the pre-first-build fallback, and the nginx try_files target all land on it.
+ - built files are now content-addressed. `hashstore` ( `.bundle-dep/manifest.json`,
+   one per base, shared by every builder ) writes `<name>.<hash>[.min].<ext>` next to
+   each output and records `"<plain url>" -> {url: "<hashed url>", generations}`.
+   this covers bundles, compiled `.ls` ( `/js/*.js` ) and compiled `.styl`
+   ( `/css/*.css` ). the plain name keeps being written: it is what already deployed
+   html points at, and the fallback for a page rendered before the first build.
+   the bundle spec name still hashes the *url list* - that is the spec's identity and
+   the `.dep` filename - so the content hash is a separate filename segment.
+ - `asseturl(url, src)` and `bundleurl({type, name, min, src})` are new pug locals,
+   used by `lib.pug`'s `+script` / `+css` and by the `bundle` filter. they record which
+   pug file embedded which url, which is how a hash change finds its way back to the
+   pages: a built asset is in no page's pug dependency graph. with a hashed url no
+   `libLoader._v` is appended - the filename already moves with the content.
+ - the store announces a url change only when the hash actually moved, so
+   page -> asset -> page settles in one pass instead of looping.
+ - the manifest is written synchronously before the change is announced, so a render
+   right after a rebuild can never read a manifest that is still behind.
+ - a builder that skips because its output is fresh now adopts that output into the
+   store, so a wiped manifest heals instead of falling back to the plain url forever.
+ - block bundles re-resolve their dependencies from the block manager on every build.
+   the set was only ever captured when the declaring pug file was analysed, so a block
+   that gained a dependency did not rebuild when that new dependency changed.
+ - the express view engine resolves these urls by reading the manifest off disk
+   ( keyed on mtime ), so it works without a store wired in and across processes.
+ - a spec that loses its last `specsrc` ( the pug file declaring it was deleted ) now
+   drops its built output and its manifest entry, not just its `.dep`.
+ - hashed generations are expired by age as well as by count: a generation is deleted
+   only when it is both beyond `keep` ( default 3 ) and older than `keepDays`
+   ( default 30 ). count alone answers the wrong question - three rebuilds can be three
+   hours or three months, while the risk is how long a browser tab stays open.
+ - `store` may be given as a function, for a host that constructs its express view
+   engine before the builders exist.
+ - fix bug: `specmgr.clear-dirty` was a prototype-level `debounce`, whose timer lives in
+   one closure. with more than one base, one bundler's pending flush was cancelled by
+   another's and its spec changes were silently dropped.
+ - fix bug: a non-minified `pack` bundle produced `<name>..js` ( double dot ).
+ - fix bug: `adapter.change` enumerated dependency *paths* instead of visiting nodes.
+   a dependency cycle hung the process, and a fan-in/fan-out graph made the queue grow
+   multiplicatively. dependency mtime is now a separate memoised pass, shared with
+   `dirty-check`.
+ - fix bug: a file whose `get-dependencies` threw was dropped entirely - it was never
+   built, and its edges were never recorded, so fixing the *included* file triggered
+   nothing. failed files are now built anyway ( so the real error is reported ) and
+   retried on every subsequent change event.
+ - fix bug: `specmgr.unlink` called `Set::remove`, and `specmgr.del-specsrc` called
+   `unlink` on a spec instead of on the manager. both threw. as a result the reverse
+   index only ever grew: a file bundled once kept triggering that bundle forever.
+ - fix bug: `specmgr.delete` never removed the spec nor its `.dep` cache, so
+   `load-caches` resurrected dead specs on the next start.
+ - a deleted pug file now releases the bundle specs it declared.
+ - `build-by-spec` skips when the output is newer than every source, like every other
+   builder. bundles are no longer rewritten on each event and on each restart.
+ - fix bug: a `bundle.json` change in the same batch as a source change dropped the
+   source change silently.
+ - fix bug: the `.min` filename was derived with a string `replace`, which hits the
+   first occurrence - `three.js/main/index.js` produced `three.min.js/main/index.js`.
+ - fix bug: the pug build's freshness guard only looked at the precompiled view, so a
+   missing static html was not regenerated.
+ - fix bug: the express view engine constructed a pug builder with the default
+   `initScan`, so it ran a second full scan and rebuilt the whole pug tree in parallel
+   with the real builder - whichever finished last won the output. it only needs `map`
+   and `getExtapi`, so it no longer scans.
+ - `view/pug` honours express' `view cache` setting instead of forcing it on.
+ - add a test suite ( `npm test`, node:test ).
+
 ## v0.0.71
 
  - upgrade i18next-fs-backend to fix vulnerability
