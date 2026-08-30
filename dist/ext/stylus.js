@@ -11,6 +11,7 @@ aux = require('../aux');
 adapter = require('../adapter');
 stylusbuild = function(opt){
   opt == null && (opt = {});
+  this.store = opt.store;
   return this.init(import$({
     srcdir: 'src/styl',
     desdir: 'static/css'
@@ -59,6 +60,9 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
       ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
       ref$ = this.map(file), src = ref$.src, des = ref$.des, desMin = ref$.desMin;
       if (!fs.existsSync(src) || aux.newer(des, mtime)) {
+        if (this.store) {
+          [des, desMin].map(fn$);
+        }
         continue;
       }
       try {
@@ -69,7 +73,7 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
         }
         desdir = path.dirname(des);
         fsExtra.ensureDirSync(desdir);
-        results$.push(stylus(code).set('filename', src).render(fn$));
+        results$.push(stylus(code).set('filename', src).render(fn1$));
       } catch (e$) {
         e = e$;
         this.log.error((src + " failed: ").red);
@@ -77,7 +81,10 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
       }
     }
     return results$;
-    function fn$(e, css){
+    function fn$(it){
+      return this$.store.ensure(it);
+    }
+    function fn1$(e, css){
       var codeMin, t2;
       if (e) {
         throw e;
@@ -87,6 +94,10 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
       });
       fs.writeFileSync(des, css);
       fs.writeFileSync(desMin, codeMin);
+      if (this$.store) {
+        this$.store.put(des, css);
+        this$.store.put(desMin, codeMin);
+      }
       t2 = Date.now();
       return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
     }
@@ -100,6 +111,9 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
     }
     return results$;
     function fn$(f){
+      if (this$.store) {
+        this$.store.drop(f);
+      }
       if (!fs.existsSync(f)) {
         return;
       }

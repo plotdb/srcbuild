@@ -15,6 +15,7 @@ browserify = null;
 lscbuild = function(opt){
   opt == null && (opt = {});
   this.useGlslify = opt.useGlslify;
+  this.store = opt.store;
   if (this.useGlslify && !glslify) {
     glslify = require("glslify");
     browserify = require("browserify");
@@ -57,6 +58,11 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
       return Promise.resolve().then(function(){
         var code, desdir;
         if (!fs.existsSync(src) || aux.newer(des, mtime)) {
+          if (this$.store) {
+            [des, desMin].map(function(it){
+              return this$.store.ensure(it);
+            });
+          }
           return Promise.resolve();
         }
         code = fs.readFileSync(src).toString();
@@ -94,6 +100,10 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
         codeMin = uglifyJs.minify(code).code || '';
         fs.writeFileSync(des, code);
         fs.writeFileSync(desMin, codeMin);
+        if (this$.store) {
+          this$.store.put(des, code);
+          this$.store.put(desMin, codeMin);
+        }
         t2 = Date.now();
         return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
       })['catch'](function(e){
@@ -111,6 +121,9 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
     }
     return results$;
     function fn$(f){
+      if (this$.store) {
+        this$.store.drop(f);
+      }
       if (!fs.existsSync(f)) {
         return;
       }

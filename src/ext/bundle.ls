@@ -1,5 +1,5 @@
 require! <[path crypto uglify-js uglifycss @loadingio/debounce.js]>
-require! <[./base ../aux]>
+require! <[./base ../aux ../hashstore]>
 fs = require "fs-extra"
 
 spec = (o = {}) ->
@@ -150,7 +150,7 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     fn = @get-cache-name s
     if fs.exists-sync fn => fs.unlink-sync fn
     @log.info "bundle spec #k removed. #fn deleted."
-    # the built output outlives the spec otherwise: nothing else
+    # the built output and the manifest entry outlive the spec otherwise: nothing else
     # knows those files belong to a bundle nobody declares any more.
     @fire \delete, s
 
@@ -187,6 +187,10 @@ build = (o={}) ->
   @defcfg = o.config or null
   # this is the directory storing dependency metadata cache
   @cachedir = path.join(o.base or '.', '.bundle-dep')
+  # content-addressed copies live in a store shared with the other builders of this
+  # base, so `/js/site.min.js` and `/assets/bundle/vendor.min.js` are looked up the
+  # same way. optional: without one, only the plain names are written.
+  @store = o.store or null
   # this file keeps optional bundle specs expliticly defines by developer.
   @cfgfn = if o.config-file => path.join(o.base or '.', o.config-file) else null
   # this helps us converting files in cfgfn to the correct path
@@ -202,6 +206,13 @@ build = (o={}) ->
   @
 
 build.prototype = Object.create(base.prototype) <<< do
+  # the content-addressed url of a built bundle, or null when it hasn't been built yet
+  # ( cold start ). callers fall back to the unhashed name in that case.
+  manifest-url: ({type, name, min = true}) ->
+    if !@store => return null
+    {des, des-min} = @des-path {name, type}
+    return @store.get @store.url-of(if min => des-min else des)
+
   get-path: (f) ->
     if typeof(f) == \string => return f
     if @mgr => return @mgr.get-url(f)
@@ -284,11 +295,12 @@ build.prototype = Object.create(base.prototype) <<< do
         deps = (if Array.isArray(o.deps) => o.deps else [o.deps]).filter(->it)
         @specmgr.update({} <<< o{name,type,src} <<< {codesrc, specsrc, deps})
 
-  # a spec nobody declares any more. drop its outputs, or they accumulate for the
-  # lifetime of the project.
+  # a spec nobody declares any more. drop its outputs and its store entries, or both
+  # accumulate for the lifetime of the project.
   purge-outputs: ({name, type}) ->
     {des, des-min} = @des-path {name, type}
     [des, des-min].map (f) ~>
+      if @store => @store.drop f
       if !fs.exists-sync f => return
       @log.info "bundle #f removed with its spec."
       fs.remove-sync f
@@ -326,6 +338,9 @@ build.prototype = Object.create(base.prototype) <<< do
     # otherwise page -> bundle -> page is an infinite loop.
     # `opt.force` covers the case the mtimes cannot see: the source *list* changed.
     if !opt.force and aux.newer(des, watched) and aux.newer(des-min, watched) =>
+      # the outputs survived but the manifest did not: adopt them rather than falling
+      # back to the plain url forever.
+      if @store => [des, des-min].map ~> @store.ensure it
       return {type, name, skipped: true}
     fs.ensure-dir desdir
       .then ~>
@@ -374,11 +389,17 @@ build.prototype = Object.create(base.prototype) <<< do
 
       .then ({code, code-min}) ~>
         Promise.all [fs.write-file(des, code), fs.write-file(des-min, code-min)]
-      .then ~>
+          .then ~>
+            # the store announces the url change; pug listens and re-renders the pages
+            # that embedded it. bundles are in no page's pug dependency graph, so
+            # nothing else could notice.
+            if !@store => return {}
+            {code: @store.put(des, code), min: @store.put(des-min, code-min)}
+      .then (out) ~>
         elapsed = Date.now! - t1
         @log.info "bundle #des ( #{fs.stat-sync(des).size} bytes / #{elapsed}ms )"
         @log.info "bundle #des-min ( #{fs.stat-sync(des-min).size} bytes / #{elapsed}ms )"
-        {type, name, elapsed}
+        {type, name, elapsed} <<< out
       .catch (e) ~>
         @log.error "#des failed: ".red
         @log.error {err: e}, e.message.toString!

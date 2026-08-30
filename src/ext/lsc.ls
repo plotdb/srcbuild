@@ -5,7 +5,7 @@ glslify = null
 browserify = null
 
 lscbuild = (opt={}) ->
-  @ <<< opt{use-glslify}
+  @ <<< opt{use-glslify, store}
   if @use-glslify and !glslify =>
     glslify := require "glslify"
     browserify := require "browserify"
@@ -29,7 +29,10 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
       t1 = Date.now!
       Promise.resolve!
         .then ~>
-          if !fs.exists-sync(src) or aux.newer(des, mtime) => return Promise.resolve!
+          if !fs.exists-sync(src) or aux.newer(des, mtime) =>
+            # up to date. adopt the outputs if the manifest was wiped from under them.
+            if @store => [des, des-min].map ~> @store.ensure it
+            return Promise.resolve!
           code = fs.read-file-sync src .toString!
           desdir = path.dirname(des)
           fs-extra.ensure-dir-sync desdir
@@ -50,6 +53,11 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
           code-min = uglify-js.minify(code).code or ''
           fs.write-file-sync des, code
           fs.write-file-sync des-min, code-min
+          # `/js/site.min.js` gets a content-addressed twin the same way a bundle does,
+          # so a page referencing it directly can be cached hard too.
+          if @store =>
+            @store.put des, code
+            @store.put des-min, code-min
           t2 = Date.now!
           @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
 
@@ -61,6 +69,7 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
     for {file, mtime} in files =>
       {src,des,des-min} = @map(file)
       [des,des-min].filter (f) ~>
+        if @store => @store.drop f
         if !fs.exists-sync f => return
         fs.unlink-sync f
         @log.warn "#src --> #f deleted.".yellow

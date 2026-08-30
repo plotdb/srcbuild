@@ -32,14 +32,19 @@ mixin script(os,cfg)
           str = str + ';' + url;
           urls.push(url);
       else
-        script(type="text/javascript",src=url + libLoader._v, defer=defer, async=!!c.async)
+        - var hurl = (typeof(asseturl) == "function") ? asseturl(url, locals.filename) : url;
+        script(type="text/javascript",src=hurl + (hurl == url ? libLoader._v : ""), defer=defer, async=!!c.async)
   if cfg && cfg.pack
     -
       var name = md5(str);
-      //var filename = "/js/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
-      var fn = "/assets/bundle/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".js";
+      var min = (typeof(cfg.min) == "undefined" || cfg.min);
       hashfile({type: "js", name: name, files: urls, src: locals.filename});
-    script(type="text/javascript",src=fn + libLoader._v)
+      // content-addressed url when the bundle has been built. it needs no `_v`: the
+      // filename already changes with the content. before the first build there is no
+      // entry yet, so fall back to the plain name ( which does need `_v` ).
+      var fn = (typeof(bundleurl) == "function") ? bundleurl({type: "js", name: name, min: min, src: locals.filename}) : null;
+      if(!fn) { fn = "/assets/bundle/" + name + (min ? ".min" : "") + ".js" + libLoader._v; }
+    script(type="text/javascript",src=fn)
 
 mixin css(os,cfg)
   -
@@ -60,11 +65,13 @@ mixin css(os,cfg)
           str = str + ';' + url;
           urls.push(url);
       else
-        link(rel="stylesheet",type="text/css",href=url + libLoader._v)
+        - var hurl = (typeof(asseturl) == "function") ? asseturl(url, locals.filename) : url;
+        link(rel="stylesheet",type="text/css",href=hurl + (hurl == url ? libLoader._v : ""))
   if cfg && cfg.pack
     -
       var name = md5(str);
-      //var filename = "/css/pack/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
-      var fn = "/assets/bundle/" + name + "." + (typeof(cfg.min) == "undefined" || cfg.min ? "min" : "") + ".css";
+      var min = (typeof(cfg.min) == "undefined" || cfg.min);
       hashfile({type: "css", name: name, files: urls, src: locals.filename});
-    link(rel="stylesheet",type="text/css",href=fn + libLoader._v)
+      var fn = (typeof(bundleurl) == "function") ? bundleurl({type: "css", name: name, min: min, src: locals.filename}) : null;
+      if(!fn) { fn = "/assets/bundle/" + name + (min ? ".min" : "") + ".css" + libLoader._v; }
+    link(rel="stylesheet",type="text/css",href=fn)

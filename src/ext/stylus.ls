@@ -1,7 +1,9 @@
 require! <[fs path fs-extra stylus uglifycss @plotdb/colors]>
 require! <[./base ../aux ../adapter]>
 
-stylusbuild = (opt={}) -> @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)
+stylusbuild = (opt={}) ->
+  @ <<< opt{store}
+  @init({srcdir: 'src/styl', desdir: 'static/css'} <<< opt)
 stylusbuild.prototype = Object.create(base.prototype) <<< do
   get-dependencies: (file) ->
     code = fs.read-file-sync file .toString!
@@ -28,7 +30,10 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
   build: (files) ->
     for {file, mtime} in files =>
       {src,des,des-min} = @map file
-      if !fs.exists-sync(src) or aux.newer(des, mtime) => continue
+      if !fs.exists-sync(src) or aux.newer(des, mtime) =>
+        # up to date. adopt the outputs if the manifest was wiped from under them.
+        if @store => [des, des-min].map ~> @store.ensure it
+        continue
       try
         t1 = Date.now!
         code = fs.read-file-sync src .toString!
@@ -42,6 +47,9 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
             code-min = uglifycss.processString(css, uglyComments: true)
             fs.write-file-sync des, css
             fs.write-file-sync des-min, code-min
+            if @store =>
+              @store.put des, css
+              @store.put des-min, code-min
             t2 = Date.now!
             @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
       catch
@@ -51,6 +59,7 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
     for {file, mtime} in files =>
       {src,des,des-min} = @map(file)
       [des,des-min].filter (f) ~>
+        if @store => @store.drop f
         if !fs.exists-sync f => return
         fs.unlink-sync f
         @log.warn "#src --> #f deleted.".yellow
