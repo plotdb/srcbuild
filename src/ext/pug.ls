@@ -3,6 +3,10 @@ require! <[./base ../aux ./bundle ../hashstore]>
 
 cwd = process.cwd!
 
+# the lib.pug injected into every doctype'd page, as pug resolves it ( see `pug-resolve`
+# and the `postParse` plugin below ).
+libpug = '@/@plotdb/srcbuild/dist/lib.pug'
+
 pugbuild = (opt={}) ->
   @i18n = opt.i18n or null
   @intlbase = opt.intlbase or 'intl'
@@ -21,9 +25,32 @@ pugbuild = (opt={}) ->
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
   @_no-view = opt.no-view or false
   @_build-intl = if opt.build-intl? => opt.build-intl else true
+  @check-libpug!
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
+  # `lib.pug` is injected by path, resolved from the *frontend root* - so whichever copy
+  # of srcbuild lands in `<base>/node_modules` wins, no matter which one is running.
+  # a stale copy there is silent: pages build, nothing errors, and any feature that
+  # lives in lib.pug ( `asseturl`, `bundleurl`, `hashfile` ) is simply absent.
+  # so say so, once, with both paths.
+  check-libpug: ->
+    mine = path.join(__dirname, '..', 'lib.pug')
+    try
+      theirs = require.resolve libpug.replace(/^@\//, ''), {paths: [@base]}
+    catch e
+      return @log.warn "cannot resolve #libpug from #{@base}: #{e.message}".yellow
+    if !fs.exists-sync(mine) or path.resolve(mine) == path.resolve(theirs) => return
+    try
+      if fs.read-file-sync(mine).toString! == fs.read-file-sync(theirs).toString! => return
+    catch e
+      return
+    ver = (p) -> try require(path.join(path.dirname(p), '..', 'package.json')).version catch e then '?'
+    @log.warn "the injected lib.pug is not the one shipped with this srcbuild.".yellow
+    @log.warn "  running : #mine ( #{ver mine} )".yellow
+    @log.warn "  injected: #theirs ( #{ver theirs} )".yellow
+    @log.warn "  it is resolved from the frontend root, so that copy wins.".yellow
+
   # remember that `src` embedded `url`, so a later hash change can find it again.
   ref-url: (url, src) ->
     if !(url and src) => return
@@ -96,7 +123,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           if !(dom.nodes.0 and dom.nodes.0.type == \Doctype) => return dom
           dom.nodes.splice 1, 0 {
             type: \Include, block: { type: 'Block', nodes: [] }
-            file: {type: \FileReference, filename: opt.filename, path: '@/@plotdb/srcbuild/dist/lib.pug'}
+            file: {type: \FileReference, filename: opt.filename, path: libpug}
           }
           return dom
       }]

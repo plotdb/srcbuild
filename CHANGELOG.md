@@ -1,5 +1,17 @@
 # Change Log
 
+## v0.1.2
+
+ - warn when the injected `lib.pug` is not the one shipped with the running srcbuild.
+   it is injected by path and resolved from the *frontend root*, so whichever copy lands
+   in `<base>/node_modules` wins regardless of which srcbuild is running - and a stale
+   one is silent: pages build, nothing errors, and every feature that lives in lib.pug
+   ( `asseturl`, `bundleurl`, `hashfile` ) is simply absent. observed in the wild: a
+   2023 copy under a frontend root made content addressing inert while every other
+   check still passed.
+ - test that the shipped lib.pug actually reaches the page - that `asseturl` is called
+   during a render and its result lands in the html.
+
 ## v0.1.1
 
  - fix bug: the url -> pages index was memory-only, and it is only filled while a page

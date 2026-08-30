@@ -194,3 +194,60 @@ test 'the page index survives a restart that rebuilds nothing', ->
     .then (u1) ->
       assert.notEqual srcof!, u1, 'the page must follow the new hash after a warm start'
       assert.match srcof!, /^\/js\/site\.[0-9a-f]{12}\.min\.js$/
+
+
+# a fixture frontend root with its own node_modules/@plotdb/srcbuild/dist/lib.pug,
+# which is how pug resolves the file it injects into every doctype'd page.
+mkroot = (libpug) ->
+  root = write tmpdir!, {
+    'src/ls/site.ls': 'x = 1\n'
+    'src/pug/index.pug': 'doctype html\nhtml\n  body\n    +script(["/js/site.min.js"])\n'
+  }
+  d = path.join(root, 'node_modules/@plotdb/srcbuild/dist')
+  fs.mkdir-sync d, {recursive: true}
+  fs.write-file-sync path.join(root, 'node_modules/@plotdb/srcbuild/package.json'),
+    '{"name":"@plotdb/srcbuild","version":"0.0.1","main":"dist/lib.pug"}'
+  fs.write-file-sync path.join(d, 'lib.pug'), libpug
+  return root
+
+
+test 'the shipped lib.pug reaches the page ( asseturl is actually called )', ->
+  # this is the regression this file exists for: `asseturl` lives in lib.pug, which is
+  # injected by path. if the injection breaks, or the mixin stops calling it, every page
+  # keeps building and content addressing is simply absent - with no error anywhere.
+  root = mkroot fs.read-file-sync(path.join(__dirname, '../src/lib.pug')).toString!
+  store = new hashstore {base: root, logger: quiet}
+  l = new lsc {base: root, logger: quiet, init-scan: false, store: store}
+  p = new pugbuild {base: root, logger: quiet, init-scan: false, store: store}
+  seen = []
+  orig = p.extapi.asseturl
+  p.extapi.asseturl = (url, src) -> seen.push url; orig url, src
+
+  src = path.join(root, 'src/ls/site.ls')
+  Promise.resolve!
+    .then -> l.build [{file: src, mtime: +fs.stat-sync(src).mtime}]
+    .then -> p.build [{file: path.join(root, 'src/pug/index.pug'), mtime: Date.now!}]
+    .then ->
+      assert.ok ('/js/site.min.js' in seen), "asseturl was never called: #{JSON.stringify seen}"
+      html = fs.read-file-sync(path.join(root, 'static/index.html')).toString!
+      assert.match html, /src="\/js\/site\.[0-9a-f]{12}\.min\.js"/, 'and its result reached the html'
+
+
+test 'a stale lib.pug in the frontend root is reported', ->
+  # exactly the failure this check exists for: an old srcbuild under <base>/node_modules
+  # shadows the running one, so the injected lib.pug has no `asseturl` at all.
+  warned = []
+  logger = {info: (->), error: (->), warn: (...a) -> warned.push a.join(' ')}
+  root = mkroot '//- module\nmixin script(os,cfg)\n  each o in os\n    script(src=o)\n'
+  new pugbuild {base: root, logger: logger, init-scan: false}
+  assert.ok warned.length, 'a differing lib.pug must be reported'
+  assert.match warned.join('\n'), /injected lib\.pug is not the one shipped/
+  assert.match warned.join('\n'), /node_modules\/@plotdb\/srcbuild\/dist\/lib\.pug/, 'names the injected copy'
+
+
+test 'an identical lib.pug is silent', ->
+  warned = []
+  logger = {info: (->), error: (->), warn: (...a) -> warned.push a.join(' ')}
+  root = mkroot fs.read-file-sync(path.join(__dirname, '../src/lib.pug')).toString!
+  new pugbuild {base: root, logger: logger, init-scan: false}
+  assert.deep-equal warned, [], 'no warning when the copies agree'
