@@ -16,6 +16,8 @@ where
  - `i18n`: i18n object.
  - `ignored`: files to be ignored. in [anymatch](https://github.com/micromatch/anymatch)-compatible definition.
    - by default ['.git']
+ - `hash`: optional. content addressing for built files. off unless `enabled`.
+   see [Content Addressing](#content-addressing).
  - `logger`: optional. for logging output. use `console.log` by default.
    - sample logger with `pino`:
 
@@ -34,6 +36,77 @@ For `lsp`, there are 4 different builders:
  - `bundle`: bundle `css` and `js` files
 
 See following sections for additional options in custom builders.
+
+
+## Content Addressing
+
+A generated file keeps its name and changes its bytes on every build, so its url cannot
+be cached: the browser has to ask every time whether it is still current. Content
+addressing gives it a second name derived from what is inside it, which can be cached
+forever because that name can never mean anything else.
+
+Off by default. It rewrites the url of every generated asset in every page, and buys
+nothing until the server in front actually serves the addressed form with a long
+`max-age`, so a project turns it on once it has done that:
+
+    srcbuild.lsp {
+      hash:
+        enabled: true       # off unless set
+        mode: 'filename'    # or 'query'
+        keep: 3             # filename mode: generations kept
+        keepDays: 0         # filename mode: also keep anything younger than this
+    }
+
+Two modes:
+
+    filename   also write `<name>.<hash>[.min].<ext>`; pages point at that.
+               a url names exactly one byte sequence, so it can be immutable. old
+               copies have to be expired, and html older than the retention window
+               points at a name that is gone.
+    query      leave one file and point at `<name>.min.js?v=<hash>`. nothing
+               accumulates and nothing 404s, but html older than the last build
+               silently gets whatever the file holds now, and some CDNs ignore the
+               query string when caching.
+
+Either way the plain name is always written and always current. It is what already
+deployed html points at, what a page rendered before the first build falls back to, and
+what a `try_files` in the server can fall back to in filename mode.
+
+Covers what `lsc`, `stylus` and `bundle` produce - reached through the `script` and
+`css` mixins and the `bundle` filter. A url written directly into a template, an image,
+or anything not built here is passed through untouched.
+
+### The manifest
+
+`<base>/.bundle-dep/manifest.json`, one per base, shared by every builder:
+
+    "/js/site.min.js": {
+      "url": "/js/site.4b6ac41e1bea.min.js",
+      "refs": ["src/pug/index.pug"],
+      "generations": [{"files": ["static/js/site.4b6ac41e1bea.min.js"], "at": ...}]
+    }
+
+`url` is what the mixins look up - pug cannot compute it, since it never reads the
+built file. `refs` is which pug files embedded the url, and is the only way back to
+them when the hash moves: a built asset is in no page's pug dependency graph, so
+nothing else can know a page went stale. `generations` is what lets old copies be
+expired.
+
+It is an index into `static/`, so the two belong together. Losing it is recoverable but
+not free: `url` comes back on the next build ( existing outputs are adopted ), while
+`refs` only comes back when pages actually render.
+
+### Retention ( filename mode )
+
+A generation is deleted only once it is both beyond `keep` and older than `keepDays`.
+Count alone answers the wrong question - three rebuilds can be three hours or three
+months, while the risk is how long a browser tab stays open. `keepDays` defaults to 0,
+because a client holding old js across a deploy is already exposed to backend api
+drift, and the answer to that is a "site updated, please reload" prompt rather than
+keeping every artefact forever. Raise it if you would rather spend disk.
+
+There is no sweep: expiry happens when that url is next rebuilt. So nothing grows
+without bound, but a url that never changes again keeps whatever it had.
 
 
 ## Custom Adapter
@@ -236,6 +309,11 @@ where the fields of the parameters:
 
 By default the above script mixin generates a script tag pointing to files under `/assets/lib/<name>/<version>/<path>`. You can customize the `/assets/lib/` by calling `libLoader.root(desiredPath)`.
 
+With [content addressing](#content-addressing) enabled, a url these mixins emit is
+looked up in the manifest and replaced by its addressed form when there is one. A url
+with no entry - an external url, a file this build did not produce, anything before its
+first build - is emitted unchanged, with `libLoader._v` appended as before.
+
 
 Additionally, you can also use a list of modules:
 
@@ -280,6 +358,17 @@ Following functions are added:
  - `md(code)`: convert `markdown` to `HTML`.
  - `yaml(path)`: read `yaml` file and return object. (tentative)
  - `yamls(path)`: read content of `yaml` files under `path` directory. (tentative)
+ - `asseturl(url, src)`: the content-addressed form of a built file's url, or `url`
+   unchanged when there is none. `src` is the pug file asking, recorded so the page can
+   be re-rendered when the hash moves. used by the `script` and `css` mixins.
+ - `bundleurl({type, name, min, src})`: the same lookup for a bundle, addressed by its
+   spec rather than its url. returns null when the bundle has not been built yet, so
+   callers fall back to the plain name.
+ - `hashfile({type, name, files, src})`: declare a bundle from a list of files. used by
+   the `pack` option of the mixins.
+
+`asseturl` and `bundleurl` do nothing but return their input when content addressing is
+off, so a template can call them unconditionally.
 
 
 ### Additional filters / functions
