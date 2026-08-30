@@ -332,19 +332,29 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           : ((ref$ = this$.i18n).options || (ref$.options = {})).fallbackLng)
         : Promise.resolve();
       return p.then(function(){
-        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, code, t1, desvdir, opt, ret, t2, desdir, e, results$ = [];
+        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, code, outs, t1, desvdir, opt, ret, t2, desdir, e, results$ = [];
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
           ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
-          if (!fs.existsSync(src) || aux.newer(this$._noView ? desh : desv, mtime)) {
+          if (!fs.existsSync(src)) {
             continue;
           }
           code = fs.readFileSync(src).toString();
+          if (/^\/\/- ?module ?/.exec(code)) {
+            continue;
+          }
+          outs = [];
+          if (!this$._noView) {
+            outs.push(desv);
+          }
+          if (!/^\/\/- ?view ?/.exec(code)) {
+            outs.push(desh);
+          }
+          if (outs.length && outs.filter(fn$).length === outs.length) {
+            continue;
+          }
           try {
             t1 = Date.now();
-            if (/^\/\/- ?module ?/.exec(code)) {
-              continue;
-            }
             if (!this$._noView) {
               desvdir = path.dirname(desv);
               fsExtra.ensureDirSync(desvdir);
@@ -380,6 +390,9 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           }
         }
         return results$;
+        function fn$(it){
+          return aux.newer(it, mtime);
+        }
       });
     };
     lngs = [''].concat(this.i18n && this._buildIntl

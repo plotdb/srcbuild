@@ -16,7 +16,8 @@ pugViewEngine = function(options){
     srcdir: options.srcdir,
     desdir: options.desdir,
     base: options.base,
-    filters: options.filters
+    filters: options.filters,
+    store: options.store
   };
   for (k in opt) {
     v = opt[k];
@@ -24,7 +25,9 @@ pugViewEngine = function(options){
       delete opt[k];
     }
   }
-  builder = new pugbuild(opt);
+  builder = new pugbuild(import$({
+    initScan: false
+  }, opt));
   extapi = builder.getExtapi();
   logger = options.logger;
   pugcache = {};
@@ -39,7 +42,7 @@ pugViewEngine = function(options){
     if (opt.settings.env === 'development') {
       lc.dev = true;
     }
-    lc.useCache = true || opt.settings['view cache'];
+    lc.useCache = !!opt.settings['view cache'];
     intl = opt.i18n ? path.join("intl", opt._locals.language) : '';
     ref$ = builder.map(src, ''), src = ref$.src, desv = ref$.desv, desh = ref$.desh;
     startTime = Date.now();

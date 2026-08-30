@@ -188,11 +188,18 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       p.then ~>
         for {file, mtime} in files =>
           {src, desh, desv} = @map file, intl
-          if !fs.exists-sync(src) or aux.newer((if @_no-view => desh else desv), mtime) => continue
+          if !fs.exists-sync(src) => continue
           code = fs.read-file-sync src .toString!
+          if /^\/\/- ?module ?/.exec(code) => continue
+          # which outputs this file is supposed to produce. the guard used to look at
+          # `desv` only, so a deleted / stale `desh` was never regenerated as long as the
+          # precompiled view happened to be fresh.
+          outs = []
+          if !@_no-view => outs.push desv
+          if !(/^\/\/- ?view ?/.exec(code)) => outs.push desh
+          if outs.length and outs.filter(-> aux.newer(it, mtime)).length == outs.length => continue
           try
             t1 = Date.now!
-            if /^\/\/- ?module ?/.exec(code) => continue
             if !@_no-view =>
               desvdir = path.dirname(desv)
               fs-extra.ensure-dir-sync desvdir

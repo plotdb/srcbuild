@@ -4,9 +4,12 @@ reload = require("require-reload")(require)
 fsp = fs.promises
 
 pug-view-engine = (options) ->
-  opt = options{logger, i18n, viewdir, srcdir, desdir, base, filters}
+  opt = options{logger, i18n, viewdir, srcdir, desdir, base, filters, store}
   for k,v of opt => if !(v?) => delete opt[k]
-  builder = new pugbuild opt
+  # the view engine only needs `map` and `get-extapi`; it has no watcher and no store.
+  # without this it runs a second full init scan and rebuilds the whole pug tree in
+  # parallel with the real builder, and whichever finishes last wins the output.
+  builder = new pugbuild {init-scan: false} <<< opt
   extapi = builder.get-extapi!
   logger = options.logger
   # pugcache[file] = cache information for `file`. each info contains
@@ -20,8 +23,9 @@ pug-view-engine = (options) ->
   return (src, opt, cb) ->
     lc = {is-cached: false}
     if opt.settings.env == \development => lc.dev = true
-    # force cache to true since we do invalidate cache. still keep opt.settings for reference.
-    lc.use-cache = true or opt.settings['view cache']
+    # we invalidate by mtime below, so express' `view cache` only decides whether the
+    # in-process cache is consulted at all - which is exactly what it is for.
+    lc.use-cache = !!opt.settings['view cache']
     intl = if opt.i18n => path.join("intl", opt._locals.language) else ''
     {src, desv, desh} = builder.map(src, '')
     start-time = Date.now!
