@@ -11,9 +11,11 @@ pugbuild = (opt={}) ->
   @extapi = @get-extapi! # get-dependencies use this, so we should init it before @init
   @bundler = opt.bundler
   @store = opt.store or null
-  # url -> the pug files that embedded it. a built asset is not in any page's pug
-  # dependency graph, so when its content hash moves this is the only way back to the
-  # pages that have it baked in. rebuilt by `get-dependencies`, which runs the filters.
+  # url -> the pug files that embedded it, when there is no store to persist it in
+  # ( the express view engine ). the store is the authority whenever one is wired in:
+  # these refs are only recorded while a page is actually rendered, so keeping them in
+  # memory alone leaves them empty after a warm start - which is exactly when the first
+  # edit needs them.
   @urlrefs = {}
   @init({srcdir: 'src/pug', desdir: 'static'} <<< opt)
   @viewdir = path.normalize(path.join(@base, opt.viewdir or '.view'))
@@ -25,14 +27,21 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
   # remember that `src` embedded `url`, so a later hash change can find it again.
   ref-url: (url, src) ->
     if !(url and src) => return
+    if (store = @get-store!) => return store.add-ref url, src
     (if @urlrefs[url] => that else @urlrefs[url] = new Set!).add src
+
+  refs-of: (url) ->
+    if (store = @get-store!) => return store.refs-of url
+    return Array.from(@urlrefs[url] or [])
 
   # a built file's content hash moved. re-render whatever embedded its url. only fired
   # when the hash actually changed, so page -> asset -> page settles in one pass.
+  # the count is logged even when it is zero: a silently empty index is what made the
+  # memory-only version of this look like it was working.
   invalidate-url: (url) ->
-    if !(s = @urlrefs[url]) or !s.size => return Promise.resolve!
-    files = Array.from(s).filter -> fs.exists-sync it
-    @log.info "#{path.join(@desdir, url)} changed --> rebuilding #{files.length} page(s)"
+    files = @refs-of(url).filter -> fs.exists-sync it
+    @log.info "#{path.join(@desdir, url)} changed --> #{files.length} page(s) embed it"
+    if !files.length => return Promise.resolve!
     @adapter.change files, {force: true}
 
   # `store` may be a function: a host that builds its express view engine before
@@ -325,6 +334,7 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
           # this pug file declared bundles ( via the `bundle` filter / `hashfile` ).
           # nobody else knows they are orphaned now.
           if @bundler => @bundler.del-specsrc src
+          if (store = @get-store!) => store.drop-ref src
           [desh,desv].filter (f) ~>
             if !fs.exists-sync f => return
             fs.unlink-sync f

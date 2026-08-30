@@ -99,6 +99,50 @@ hashstore.prototype = import$(Object.create(Object.prototype), {
   get: function(url){
     return (this.manifest[url] || {}).url || null;
   },
+  addRef: function(url, src){
+    var e, that, refs, this$ = this;
+    e = (that = this.manifest[url])
+      ? that
+      : this.manifest[url] = {};
+    refs = e.refs || (e.refs = []);
+    if (in$(src, refs)) {
+      return;
+    }
+    refs.push(src);
+    this._refsDirty = true;
+    if (this._flushScheduled) {
+      return;
+    }
+    this._flushScheduled = true;
+    return process.nextTick(function(){
+      this$._flushScheduled = false;
+      if (this$._refsDirty) {
+        this$._refsDirty = false;
+        return this$.save();
+      }
+    });
+  },
+  refsOf: function(url){
+    return ((this.manifest[url] || {}).refs || []).slice();
+  },
+  dropRef: function(src){
+    var dirty, url, ref$, e;
+    dirty = false;
+    for (url in ref$ = this.manifest) {
+      e = ref$[url];
+      if (!e.refs || !in$(src, e.refs)) {
+        continue;
+      }
+      e.refs = e.refs.filter(fn$);
+      dirty = true;
+    }
+    if (dirty) {
+      return this.save();
+    }
+    function fn$(it){
+      return it !== src;
+    }
+  },
   ensure: function(file){
     if (this.get(this.urlOf(file))) {
       return null;
@@ -119,17 +163,18 @@ hashstore.prototype = import$(Object.create(Object.prototype), {
     return hashstore.normalizeGen(e.generations[0]).files[0] || null;
   },
   put: function(file, code){
-    var url, hash, hashed, entry, prev, changed, now, cur, olds, gens, cutoff, ref$, kept, rest, dropped, alive, e, this$ = this;
+    var url, hash, hashed, prev, entry, changed, now, cur, olds, gens, cutoff, ref$, kept, rest, dropped, alive, e, this$ = this;
     url = this.urlOf(file);
     hash = crypto.createHash('md5').update(code).digest('hex').substring(0, 12);
     if (this.mode === 'query') {
       return this.putQuery(url, hash);
     }
     hashed = path.join(path.dirname(file), hashstore.hashedName(path.basename(file), hash));
-    entry = {
-      url: this.urlOf(hashed)
-    };
     prev = this.manifest[url] || {};
+    entry = {
+      url: this.urlOf(hashed),
+      refs: prev.refs || []
+    };
     changed = prev.url !== entry.url;
     now = Date.now();
     cur = {
@@ -181,11 +226,12 @@ hashstore.prototype = import$(Object.create(Object.prototype), {
     return ref$ = import$({}, entry), ref$.url = url, ref$.hashed = entry.url, ref$.changed = changed, ref$;
   },
   putQuery: function(url, hash){
-    var entry, prev, changed, ref$;
-    entry = {
-      url: url + "?v=" + hash
-    };
+    var prev, entry, changed, ref$;
     prev = this.manifest[url] || {};
+    entry = {
+      url: url + "?v=" + hash,
+      refs: prev.refs || []
+    };
     changed = prev.url !== entry.url;
     this.manifest[url] = (entry.generations = [], entry);
     this.save();
@@ -225,4 +271,9 @@ function import$(obj, src){
   var own = {}.hasOwnProperty;
   for (var key in src) if (own.call(src, key)) obj[key] = src[key];
   return obj;
+}
+function in$(x, xs){
+  var i = -1, l = xs.length >>> 0;
+  while (++i < l) if (x === xs[i]) return true;
+  return false;
 }

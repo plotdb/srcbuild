@@ -38,23 +38,33 @@ pugbuild = function(opt){
 };
 pugbuild.prototype = import$(Object.create(base.prototype), {
   refUrl: function(url, src){
-    var that;
+    var store, that;
     if (!(url && src)) {
       return;
+    }
+    if (store = this.getStore()) {
+      return store.addRef(url, src);
     }
     return ((that = this.urlrefs[url])
       ? that
       : this.urlrefs[url] = new Set()).add(src);
   },
-  invalidateUrl: function(url){
-    var s, files;
-    if (!(s = this.urlrefs[url]) || !s.size) {
-      return Promise.resolve();
+  refsOf: function(url){
+    var store;
+    if (store = this.getStore()) {
+      return store.refsOf(url);
     }
-    files = Array.from(s).filter(function(it){
+    return Array.from(this.urlrefs[url] || []);
+  },
+  invalidateUrl: function(url){
+    var files;
+    files = this.refsOf(url).filter(function(it){
       return fs.existsSync(it);
     });
-    this.log.info(path.join(this.desdir, url) + " changed --> rebuilding " + files.length + " page(s)");
+    this.log.info(path.join(this.desdir, url) + " changed --> " + files.length + " page(s) embed it");
+    if (!files.length) {
+      return Promise.resolve();
+    }
     return this.adapter.change(files, {
       force: true
     });
@@ -531,12 +541,15 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
           : ((ref$ = this$.i18n).options || (ref$.options = {})).fallbackLng)
         : Promise.resolve();
       return p.then(function(){
-        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, results$ = [];
+        var i$, ref$, len$, ref1$, file, mtime, src, desh, desv, store, results$ = [];
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
           ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
           if (this$.bundler) {
             this$.bundler.delSpecsrc(src);
+          }
+          if (store = this$.getStore()) {
+            store.dropRef(src);
           }
           results$.push([desh, desv].filter(fn$));
         }

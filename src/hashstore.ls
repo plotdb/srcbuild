@@ -17,10 +17,14 @@ fs = require "fs-extra"
 # deployed html points at, the fallback for a page rendered before the first build, and
 # the target of the nginx fallback in filename mode.
 #
-#     "<plain url>" -> {url: "<addressed url>", generations: [{files, at}, ...]}
+#     "<plain url>" -> {url: "<addressed url>", refs: [pug file, ...],
+#                       generations: [{files, at}, ...]}
 #
-# keyed by the *url*, because that is what a pug page asks with. the manifest is shared
-# by every builder of one base.
+# keyed by the *url*, because that is what a pug page asks with. `refs` is which pug
+# files embedded it - the only way back to the pages when a hash moves, since a built
+# asset is in no page's pug dependency graph. it has to be persisted: a warm start
+# renders nothing, so an in-memory index would be empty exactly when the first edit
+# after a restart needs it. the manifest is shared by every builder of one base.
 hashstore = (o = {}) ->
   @base = o.base or '.'
   # urls are relative to the web root, not to any single builder's desdir.
@@ -88,6 +92,34 @@ hashstore.prototype = Object.create(Object.prototype) <<< do
   # the content-addressed url for a plain url, or null if we have never built it.
   get: (url) -> (@manifest[url] or {}).url or null
 
+  # `src` embedded `url`. recorded on every render; only written back when it is new,
+  # so a rebuild that changes nothing costs no io.
+  add-ref: (url, src) ->
+    e = (if @manifest[url] => that else @manifest[url] = {})
+    refs = (e.refs or= [])
+    if src in refs => return
+    refs.push src
+    # deferred, unlike `put`: refs are only read at startup, so they do not need to be
+    # on disk before a change is announced, and a full cold build would otherwise write
+    # the manifest once per asset per page.
+    @_refs-dirty = true
+    if @_flush-scheduled => return
+    @_flush-scheduled = true
+    process.next-tick ~>
+      @_flush-scheduled = false
+      if @_refs-dirty => @_refs-dirty = false; @save!
+
+  refs-of: (url) -> ((@manifest[url] or {}).refs or []).slice!
+
+  # a pug file was deleted. it embeds nothing any more.
+  drop-ref: (src) ->
+    dirty = false
+    for url, e of @manifest =>
+      if !e.refs or !(src in e.refs) => continue
+      e.refs = e.refs.filter (-> it != src)
+      dirty = true
+    if dirty => @save!
+
   # the file has not changed but we have no record of it ( the manifest was wiped while
   # the outputs survived ). adopt it instead of silently falling back forever.
   ensure: (file) ->
@@ -107,8 +139,8 @@ hashstore.prototype = Object.create(Object.prototype) <<< do
     hash = crypto.create-hash \md5 .update(code) .digest \hex .substring 0, 12
     if @mode == \query => return @put-query url, hash
     hashed = path.join(path.dirname(file), hashstore.hashed-name(path.basename(file), hash))
-    entry = {url: @url-of(hashed)}
     prev = @manifest[url] or {}
+    entry = {url: @url-of(hashed), refs: (prev.refs or [])}
     changed = prev.url != entry.url
 
     now = Date.now!
@@ -140,8 +172,8 @@ hashstore.prototype = Object.create(Object.prototype) <<< do
 
   # query mode: one file, so there is nothing to write and nothing to expire.
   put-query: (url, hash) ->
-    entry = {url: "#url?v=#hash"}
     prev = @manifest[url] or {}
+    entry = {url: "#url?v=#hash", refs: (prev.refs or [])}
     changed = prev.url != entry.url
     @manifest[url] = entry <<< {generations: []}
     @save!

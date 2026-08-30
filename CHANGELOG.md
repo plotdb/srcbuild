@@ -1,5 +1,17 @@
 # Change Log
 
+## v0.1.1
+
+ - fix bug: the url -> pages index was memory-only, and it is only filled while a page
+   renders. a warm start rebuilds nothing, so the index was empty exactly when the first
+   edit after a restart needed it: the content hash moved and no page was re-rendered to
+   follow it. it now lives in the manifest ( `refs` per url ) and is loaded on start.
+   writes are deferred and only happen when a ref is new, so a cold build does not write
+   the manifest once per asset per page.
+ - `invalidate-url` logs the page count even when it is zero. returning silently is what
+   made the above look like it was working.
+ - a deleted pug file is dropped from the index.
+
 ## v0.1.0
 
  - content addressing is OPT IN: `hash: {enabled: true}`. off, nothing changes.

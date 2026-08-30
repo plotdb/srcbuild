@@ -150,3 +150,47 @@ test 'the plain name is always current, whatever the mode', ->
         plain = fs.read-file-sync(path.join(root, 'static/js/site.min.js')).toString!
         assert.match plain, /zzz/, "#mode: plain name must hold the latest build"
   |> (ps) -> Promise.all ps
+
+
+test 'the page index survives a restart that rebuilds nothing', ->
+  # refs are only recorded while a page renders. a warm start renders nothing, so a
+  # memory-only index is empty exactly when the first edit after a restart needs it -
+  # the hash moves, and no page is rebuilt to follow it.
+  root = write tmpdir!, {
+    'src/ls/site.ls': 'x = 1\n'
+    'src/pug/index.pug': 'doctype html\nhtml\n  body\n    +script(["/js/site.min.js"])\n'
+  }
+  fs.mkdir-sync path.join(root, 'node_modules/@plotdb/srcbuild/dist'), {recursive: true}
+  fs.copy-file-sync path.join(__dirname, '../src/lib.pug'), path.join(root, 'node_modules/@plotdb/srcbuild/dist/lib.pug')
+  fs.write-file-sync path.join(root, 'node_modules/@plotdb/srcbuild/package.json'), '{"name":"@plotdb/srcbuild","main":"dist/lib.pug"}'
+
+  lssrc = path.join(root, 'src/ls/site.ls')
+  pugsrc = path.join(root, 'src/pug/index.pug')
+  srcof = -> (/<script[^>]*src="([^"]*)"/.exec(fs.read-file-sync(path.join(root, 'static/index.html')).toString!) or [])[1]
+
+  s1 = new hashstore {base: root, logger: quiet}
+  l1 = new lsc {base: root, logger: quiet, init-scan: false, store: s1}
+  p1 = new pugbuild {base: root, logger: quiet, init-scan: false, store: s1}
+
+  Promise.resolve!
+    .then -> l1.build [{file: lssrc, mtime: +fs.stat-sync(lssrc).mtime}]
+    .then -> p1.adapter.change pugsrc
+    .then ->
+      assert.match srcof!, /^\/js\/site\.[0-9a-f]{12}\.min\.js$/
+      new Promise (res) -> setImmediate res      # the deferred ref flush
+    .then ->
+      assert.deep-equal (new hashstore {base: root, logger: quiet}).refs-of('/js/site.min.js'),
+        [pugsrc], 'the index must be on disk, not only in memory'
+      # restart: fresh instances, nothing to rebuild, so nothing renders.
+      s2 = new hashstore {base: root, logger: quiet}
+      l2 = new lsc {base: root, logger: quiet, init-scan: false, store: s2}
+      p2 = new pugbuild {base: root, logger: quiet, init-scan: false, store: s2}
+      s2.on \change, ({url}) -> p2.invalidate-url url
+      u1 = srcof!
+      fs.write-file-sync lssrc, 'x = 2\n'
+      touch lssrc
+      l2.build [{file: lssrc, mtime: +fs.stat-sync(lssrc).mtime}] .then -> u1
+    .then (u1) -> new Promise (res) -> setTimeout (-> res u1), 300
+    .then (u1) ->
+      assert.notEqual srcof!, u1, 'the page must follow the new hash after a warm start'
+      assert.match srcof!, /^\/js\/site\.[0-9a-f]{12}\.min\.js$/
