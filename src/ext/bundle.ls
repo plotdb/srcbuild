@@ -1,4 +1,4 @@
-require! <[path uglify-js uglifycss @loadingio/debounce.js]>
+require! <[path crypto uglify-js uglifycss @loadingio/debounce.js]>
 require! <[./base ../aux]>
 fs = require "fs-extra"
 
@@ -33,6 +33,11 @@ spec.prototype = Object.create(Object.prototype) <<< do
 specmgr = (o = {}) ->
   @log = o.log
   @cachedir = o.cachedir
+  # `debounce` keeps its timer in a closure, so a debounced method defined on the
+  # prototype is shared by every instance: with more than one base ( `lsp {base: [...]}` )
+  # one manager's pending flush is cancelled by another's and then never runs, and its
+  # spec changes are silently dropped. bind it per instance instead.
+  @clear-dirty = debounce 1000, ~> @flush-dirty!
   @evthdr = {}
   @_ = {}
   # codesrc, specsrc, depsare hashes for with files that should be watched in this builder.
@@ -57,11 +62,13 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
   set-dirty: (o = {}) ->
     @_dirty.add @key(o)
     @clear-dirty!
-  clear-dirty: debounce 1000, ->
+  flush-dirty: ->
     specs = Array.from(@_dirty)
       .map (k) ~> @get k
       .filter -> it
-    @fire \build-by-spec, specs
+    # `force`: the spec *definition* changed ( source list added / removed / reordered ),
+    # so the output is stale even when every remaining source file is older than it.
+    @fire \build-by-spec, specs, {force: true}
     specs.map (s) -> s.sync-cache!
     @_dirty.clear!
   add: (o={}, opt = {}) ->
@@ -75,14 +82,14 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     s
   set: (o = {}, opt = {}) -> @add o, ({force: true} <<< opt)
   has-code: (f) -> !!@codesrc[f] or !!@deps[f]
-  touch-code: (files) ->
+  touch-code: (files, opt = {}) ->
     files = if Array.isArray(files) => files else [files]
     keys = new Set!
     files.map (f) ~>
       if typeof(f) == \object => f = f.file
       if @codesrc[f] => Array.from(@codesrc[f]).for-each (k) ~> keys.add k
       if @deps[f] => Array.from(@deps[f]).for-each (k) ~> keys.add k
-    @fire \build-by-spec, Array.from(keys).map((k) ~> @get k)
+    @fire \build-by-spec, Array.from(keys).map((k) ~> @get k).filter(-> it), opt
 
   update: (o = {}) ->
     k = @key o
@@ -93,6 +100,15 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     if Array.from(s.codesrc).join(',') != (o.codesrc or []).join(',') => dirty = true
     if s.src.join(',') != (o.src or []).join(',') => dirty = true
     s.src = (if Array.isArray(o.src) => o.src else [o.src]).filter(->it)
+    # drop the links of sources this spec no longer uses. without this the reverse index
+    # only ever grows: a file that was bundled once keeps triggering that bundle forever.
+    for f in <[codesrc deps]> =>
+      next = new Set(o[f] or [])
+      s[f].for-each (n) ~>
+        if next.has(n) => return
+        u = {spec: s}
+        u[f] = n
+        @unlink u
     s.codesrc = new Set(o.codesrc or [])
     s.deps = new Set(o.deps or [])
     (if Array.isArray(o.specsrc) => o.specsrc else [o.specsrc]).for-each (n) ->
@@ -106,13 +122,37 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     if dirty => @set-dirty s
     return dirty
 
+  # replace a spec's extra dependencies without marking it dirty. block dependencies
+  # are resolved by the block manager and change whenever a block's html changes, so
+  # they have to be re-linked after a build - but re-linking must not itself schedule
+  # another build, or every block bundle would rebuild forever.
+  set-deps: (spec, list) ->
+    next = new Set(list or [])
+    if Array.from(spec.deps).sort!join(',') == Array.from(next).sort!join(',') => return false
+    spec.deps.for-each (n) ~> if !next.has(n) => @unlink deps: n, spec: spec
+    spec.deps = next
+    next.for-each (n) ~> @link deps: n, spec: spec
+    spec.sync-cache!
+    @log.info "bundle #{@key spec} dependencies updated ( #{next.size} )"
+    return true
+
   get: (o={}) -> @_[@key o]
   delete: (o = {}) ->
-    s = @_[@key o]
+    k = @key o
+    if !(s = @_[k]) => return
     s.codesrc.for-each (n) ~> @unlink codesrc: n, spec: s
     s.specsrc.for-each (n) ~> @unlink specsrc: n, spec: s
     s.deps.for-each (n) ~> @unlink deps: n, spec: s
-    @set-dirty o
+    delete @_[k]
+    # the spec is gone, so `clear-dirty` would drop it silently and leave the `.dep`
+    # behind - which `load-caches` would happily resurrect on the next start.
+    @_dirty.delete k
+    fn = @get-cache-name s
+    if fs.exists-sync fn => fs.unlink-sync fn
+    @log.info "bundle spec #k removed. #fn deleted."
+    # the built output outlives the spec otherwise: nothing else
+    # knows those files belong to a bundle nobody declares any more.
+    @fire \delete, s
 
   link: (o = {}) ->
     f = if o.codesrc => \codesrc else if o.specsrc => \specsrc else \deps
@@ -123,17 +163,19 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
   unlink: (o = {}) ->
     f = if o.codesrc => \codesrc else if o.specsrc => \specsrc else \deps
     if !(s = @[f][o[f]]) => return
-    s.remove @key o.spec
+    s.delete @key o.spec
     if s.size => return
     delete @[f][o[f]]
 
   del-specsrc: (n) ->
     if !(s = @specsrc[n]) => return
-    s.for-each (k) ~>
+    # `unlink` mutates @specsrc[n], so iterate over a copy.
+    Array.from(s).for-each (k) ~>
       if !(spec = @get k) => return
-      spec.unlink specsrc: n
-      # spec deletion trigger a cache writeback,
-      # but should not trigger bundle rebuild. how to identify this?
+      spec.specsrc.delete n
+      @unlink specsrc: n, spec: spec
+      # nobody declares this bundle any more - it is garbage, not just dirty.
+      if !spec.specsrc.size => return @delete k
       @set-dirty k
     delete @specsrc[n]
 
@@ -180,8 +222,9 @@ build.prototype = Object.create(base.prototype) <<< do
   reset: ->
     # specmgr manages lifecycle of specs
     @specmgr = new specmgr cachedir: @cachedir, log: @log
-    @specmgr.on \build-by-spec, (specs) ~>
-      specs.for-each (spec) ~> @build-by-spec spec
+    @specmgr.on \build-by-spec, (specs, opt = {}) ~>
+      specs.for-each (spec) ~> @build-by-spec spec, opt
+    @specmgr.on \delete, (spec) ~> @purge-outputs spec
 
   load-cfg: (opt = {}) ->
     cfgs = if opt.init => [['',@defcfg]] else []
@@ -222,7 +265,7 @@ build.prototype = Object.create(base.prototype) <<< do
         @log.error "parse error of cache file #n".red
       @specmgr.set json, {init: true}
 
-  del-specsrc: (n) -> specmgr.del-specsrc n
+  del-specsrc: (n) -> @specmgr.del-specsrc n
   add-spec: (opts = []) ->
     opts = (if Array.isArray(opts) => opts else [opts]).filter(->it)
     opts.map (o) ~>
@@ -241,40 +284,74 @@ build.prototype = Object.create(base.prototype) <<< do
         deps = (if Array.isArray(o.deps) => o.deps else [o.deps]).filter(->it)
         @specmgr.update({} <<< o{name,type,src} <<< {codesrc, specsrc, deps})
 
+  # a spec nobody declares any more. drop its outputs, or they accumulate for the
+  # lifetime of the project.
+  purge-outputs: ({name, type}) ->
+    {des, des-min} = @des-path {name, type}
+    [des, des-min].map (f) ~>
+      if !fs.exists-sync f => return
+      @log.info "bundle #f removed with its spec."
+      fs.remove-sync f
+
   get-dependencies: (file) -> return []
   is-supported: (file) -> return @specmgr.has-code file
-  purge: (files) -> @build files
+  # a source file was deleted. its mtime tells us nothing, so the guard in
+  # `build-by-spec` cannot see that the bundle is now stale - rebuild unconditionally.
+  purge: (files) -> @build files, {force: true}
   build: (files, opt) ->
-    force = if typeof(opt) == \boolean => opt else false
-    if !opt? => opt = {}
-    if files.filter(~> it.file == @cfgfn).length => return @load-cfg!
-    @specmgr.touch-code files
+    opt = if typeof(opt) == \boolean => {force: opt} else (opt or {})
+    # a change on the config file and on a bundled source can arrive in the same batch.
+    # returning early here used to drop the latter silently.
+    [cfgs, rest] = [[], []]
+    files.map (f) ~> (if f.file == @cfgfn => cfgs else rest).push f
+    if cfgs.length => @load-cfg!
+    if rest.length => @specmgr.touch-code rest, opt
 
   des-path: ({name, type}) -> return build.des-path {desdir: @desdir, name, type}
 
-  build-by-spec: (spec) ->
+  build-by-spec: (spec, opt = {}) ->
     <~ Promise.resolve!then _
+    if !spec => return
     {name,type} = spec
     t1 = Date.now!
     srcs = Array.from spec.codesrc
+    # `deps` are the extra files a spec is rebuilt for ( block bundling resolves them
+    # from the registry ). they are not read here, but they do decide freshness.
+    watched = srcs ++ Array.from(spec.deps)
     {desdir, des, des-min} = @des-path {name, type}
     ext = if type == \block => \html else type
+    # every other builder skips when the output is newer than its sources; this one used
+    # to rebuild and rewrite unconditionally on every event. that is required to be a
+    # no-op before the output can ever feed back into a page rebuild ( content hashing ),
+    # otherwise page -> bundle -> page is an infinite loop.
+    # `opt.force` covers the case the mtimes cannot see: the source *list* changed.
+    if !opt.force and aux.newer(des, watched) and aux.newer(des-min, watched) =>
+      return {type, name, skipped: true}
     fs.ensure-dir desdir
       .then ~>
         if type == \block =>
           if !@mgr or !@mgr.bundle =>
             throw new Error("block bundling requires manager of @plotdb/block provided via bundler option.")
           @mgr.bundle blocks: spec.src
-            .then (ret) ->
+            .then (ret) ~>
+              # the manager just told us what this bundle actually depends on. that set
+              # moves whenever a block's html gains or drops a dependency, and until now
+              # it was only ever captured at `add-spec` time - so a newly added
+              # dependency was invisible to the watcher until the declaring pug file
+              # happened to be re-analysed.
+              if ret.deps =>
+                deps = ret.deps
+                @specmgr.set-deps spec, ((deps.js or []) ++ (deps.css or []) ++ (deps.block or [])).map (f) ~> @get-path f
               code = ret.code or ret
-              Promise.all [
-                fs.write-file(des, code)
-                fs.write-file(des-min, code)
-              ]
+              {code, code-min: code}
         else
+          # `String.replace` with a string argument replaces the *first* occurrence, so
+          # `three.js/main/index.js` used to derive `three.min.js/main/index.js`. anchor
+          # it at the end of the path instead.
+          [re, re-min] = [new RegExp("\\.min\\.#{ext}$"), new RegExp("\\.#{ext}$")]
           ps = srcs.map (f) ->
-            f = f.replace "\.min.#ext", ".#ext"
-            f-min = f.replace "\.#ext", ".min.#ext"
+            f = f.replace re, ".#ext"
+            f-min = f.replace re-min, ".min.#ext"
             fs.read-file f
               .catch -> return ""
               .then (b) ->
@@ -293,21 +370,15 @@ build.prototype = Object.create(base.prototype) <<< do
                   else if type == \css => uglifycss.processString(o.code, uglyComments: true)
                   else o.code
                 .join('')
-              Promise.all [
-                fs.write-file(des, normal)
-                fs.write-file(des-min, minified)
-              ]
+              {code: normal, code-min: minified}
 
+      .then ({code, code-min}) ~>
+        Promise.all [fs.write-file(des, code), fs.write-file(des-min, code-min)]
       .then ~>
-        ret = do
-          type: type, name: name
-          elapsed: Date.now! - t1
-          size: fs.stat-sync(des).size
-          size-min: fs.stat-sync(des-min).size
-        {size,size-min,elapsed} = ret
-        @log.info "bundle #des ( #size bytes / #{elapsed}ms )"
-        @log.info "bundle #des-min ( #size-min bytes / #{elapsed}ms )"
-        ret
+        elapsed = Date.now! - t1
+        @log.info "bundle #des ( #{fs.stat-sync(des).size} bytes / #{elapsed}ms )"
+        @log.info "bundle #des-min ( #{fs.stat-sync(des-min).size} bytes / #{elapsed}ms )"
+        {type, name, elapsed}
       .catch (e) ~>
         @log.error "#des failed: ".red
         @log.error {err: e}, e.message.toString!

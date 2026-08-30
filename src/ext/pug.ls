@@ -242,6 +242,9 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
       p.then ~>
         for {file,mtime} in files =>
           {src,desh,desv} = @map file, intl
+          # this pug file declared bundles ( via the `bundle` filter / `hashfile` ).
+          # nobody else knows they are orphaned now.
+          if @bundler => @bundler.del-specsrc src
           [desh,desv].filter (f) ~>
             if !fs.exists-sync f => return
             fs.unlink-sync f

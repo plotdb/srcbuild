@@ -412,6 +412,9 @@ pugbuild.prototype = import$(Object.create(base.prototype), {
         for (i$ = 0, len$ = (ref$ = files).length; i$ < len$; ++i$) {
           ref1$ = ref$[i$], file = ref1$.file, mtime = ref1$.mtime;
           ref1$ = this$.map(file, intl), src = ref1$.src, desh = ref1$.desh, desv = ref1$.desv;
+          if (this$.bundler) {
+            this$.bundler.delSpecsrc(src);
+          }
           results$.push([desh, desv].filter(fn$));
         }
         return results$;
