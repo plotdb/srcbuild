@@ -12,7 +12,7 @@
     "srcbuild-pug": "./dist/pug-cli"
   },
   "scripts": {
-    "prepare": "mkdir -p ./node_modules/@plotdb/srcbuild/dist; cp dist/lib.pug ./node_modules/@plotdb/srcbuild/dist/",
+    "prepare": "mkdir -p ./node_modules/@plotdb/srcbuild/dist; [ -L ./node_modules/@plotdb/srcbuild/dist ] || cp dist/lib.pug ./node_modules/@plotdb/srcbuild/dist/",
     "start": "./node_modules/.bin/lsc watch.ls",
     "test": "node test/index.js"
   },
