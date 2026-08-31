@@ -6,6 +6,9 @@ mkdir -p dist
 echo "building src folder ..."
 ./node_modules/.bin/lsc -o ./dist/ -cb src
 cp src/lib.pug dist/lib.pug
+# plain js, not compiled from .ls: worker_threads needs a path that resolves the same
+# way from src/ ( tests ) and dist/ ( published ).
+cp src/minify-worker.js dist/minify-worker.js
 echo "building cli ..."
 echo "#!/usr/bin/env node" > ./dist/cli
 cat ./dist/cli.js >> ./dist/cli

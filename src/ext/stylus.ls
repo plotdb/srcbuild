@@ -27,32 +27,40 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
     src: file
     des: file.replace(@srcdir, @desdir).replace(/\.styl$/, '.css')
     des-min: file.replace(@srcdir, @desdir).replace(/\.styl$/, '.min.css')
+  # returns a promise now: uglifycss runs on a worker thread ( see minify.ls ), so the
+  # write cannot happen in the same tick as the render. that also makes this builder
+  # report when it is actually done, which `adapter.change` passes up to `watcher.ready`.
   build: (files) ->
-    for {file, mtime} in files =>
-      {src,des,des-min} = @map file
-      if !fs.exists-sync(src) or aux.newer(des, mtime) =>
-        # up to date. adopt the outputs if the manifest was wiped from under them.
-        if @store => [des, des-min].map ~> @store.ensure it
-        continue
-      try
-        t1 = Date.now!
+    Promise.all files.map ({file, mtime}) ~> @build-one file, mtime
+
+  build-one: (file, mtime) ->
+    {src,des,des-min} = @map file
+    if !fs.exists-sync(src) or aux.newer(des, mtime) =>
+      # up to date. adopt the outputs if the manifest was wiped from under them.
+      if @store => [des, des-min].map ~> @store.ensure it
+      return Promise.resolve!
+    t1 = Date.now!
+    Promise.resolve!
+      .then ~>
         code = fs.read-file-sync src .toString!
-        if /^\/\/- ?(module) ?/.exec(code) => continue
-        desdir = path.dirname(des)
-        fs-extra.ensure-dir-sync desdir
+        if /^\/\/- ?(module) ?/.exec(code) => return null
+        fs-extra.ensure-dir-sync path.dirname(des)
+        # stylus' `render` callback is synchronous, but throwing out of it only unwinds
+        # into stylus. wrap it so the error reaches our `.catch`.
+        (res, rej) <~ new Promise _
         stylus code
           .set \filename, src
-          .render (e, css) ~>
-            if e => throw e
-            code-min = minify.or-original \css, css, {}, @log, src
-            fs.write-file-sync des, css
-            fs.write-file-sync des-min, code-min
-            if @store =>
-              @store.put des, css
-              @store.put des-min, code-min
-            t2 = Date.now!
-            @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
-      catch
+          .render (e, css) -> if e => rej e else res css
+      .then (css) ~>
+        if css == null => return
+        minify.async-or-original \css, css, {}, @log, src .then (code-min) ~>
+          fs.write-file-sync des, css
+          fs.write-file-sync des-min, code-min
+          if @store =>
+            @store.put des, css
+            @store.put des-min, code-min
+          @log.info "#src --> #des / #des-min ( #{Date.now! - t1}ms )"
+      .catch (e) ~>
         @log.error "#src failed: ".red
         @log.error e.message.toString!
   purge: (files) ->

@@ -93,19 +93,20 @@ lscbuild.prototype = import$(Object.create(base.prototype), {
           });
         });
       }).then(function(code){
-        var codeMin, t2;
         if (!code) {
           return;
         }
-        codeMin = minify.orOriginal('js', code.toString(), {}, this$.log, src);
-        fs.writeFileSync(des, code);
-        fs.writeFileSync(desMin, codeMin);
-        if (this$.store) {
-          this$.store.put(des, code);
-          this$.store.put(desMin, codeMin);
-        }
-        t2 = Date.now();
-        return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
+        return minify.asyncOrOriginal('js', code.toString(), {}, this$.log, src).then(function(codeMin){
+          var t2;
+          fs.writeFileSync(des, code);
+          fs.writeFileSync(desMin, codeMin);
+          if (this$.store) {
+            this$.store.put(des, code);
+            this$.store.put(desMin, codeMin);
+          }
+          t2 = Date.now();
+          return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
+        });
       })['catch'](function(e){
         this$.log.error((src + " failed: ").red);
         return this$.log.error(e.message.toString());

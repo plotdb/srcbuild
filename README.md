@@ -109,6 +109,44 @@ There is no sweep: expiry happens when that url is next rebuilt. So nothing grow
 without bound, but a url that never changes again keeps whatever it had.
 
 
+## Minification
+
+Minification runs on a `worker_threads` worker, not on the main thread.
+
+It matters when srcbuild shares a process with a server, which is the usual dev setup.
+`uglify-js` is synchronous CPU work and a large bundle takes seconds: measured on a
+0.94MB bundle, 2677ms of minify blocked the event loop for 1769ms in one stall. Nothing
+else in that process runs during it - long enough for a fresh `pg.Pool` connect with a
+2s timeout to expire while its handshake callbacks cannot be delivered, so the request
+fails with a database error that has nothing to do with the database.
+
+The same bundle through the worker: ~20% more total time ( a worker has its own heap and
+warms its own JIT ), 9ms of it spent moving the strings across, and the loop's worst tick
+was 13ms.
+
+There is no size threshold, because cost does not track size: in the same corpus 800KB
+took 88ms and 960KB took 2319ms, one construct in the last chunk being pathological for
+uglify. Everything the builders minify goes across.
+
+The worker is spawned on first use, `unref`'d, and terminated after 30s idle. If it
+cannot start or it dies, minification falls back in-process for the rest of the run -
+slower, never broken.
+
+`SRCBUILD_MINIFY_WORKER=0` keeps everything in-process.
+
+Two things stay synchronous, both deliberately:
+
+ - the `lsc` and `stylus` **pug filters**. Pug's filter interface has no async form.
+   They handle inline `include:lsc` snippets, which are small.
+ - a source file that ships its own `.min` twin is never minified at all, so it never
+   reaches the worker.
+
+On failure the minifier returns the input unchanged and logs. It never writes an empty
+output: `uglify-js.minify` signals a syntax error by returning `{error}` with no `code`
+field, and reading `.code` off that used to yield an empty `.min.js`, or - inside a
+bundle's `join` - a file that silently vanished from the output.
+
+
 ## Custom Adapter
 
 Extend base builder for a customized builder:

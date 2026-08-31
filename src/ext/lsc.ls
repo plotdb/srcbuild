@@ -51,17 +51,18 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
         .then (code) ~>
           if !code => return
           # `or ''` here used to write an empty .min.js whenever uglify errored, and the
-          # server happily served it. keep the unminified code instead.
-          code-min = minify.or-original \js, code.toString!, {}, @log, src
-          fs.write-file-sync des, code
-          fs.write-file-sync des-min, code-min
-          # `/js/site.min.js` gets a content-addressed twin the same way a bundle does,
-          # so a page referencing it directly can be cached hard too.
-          if @store =>
-            @store.put des, code
-            @store.put des-min, code-min
-          t2 = Date.now!
-          @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
+          # server happily served it. keep the unminified code instead. off-thread now:
+          # see minify.ls.
+          minify.async-or-original \js, code.toString!, {}, @log, src .then (code-min) ~>
+            fs.write-file-sync des, code
+            fs.write-file-sync des-min, code-min
+            # `/js/site.min.js` gets a content-addressed twin the same way a bundle
+            # does, so a page referencing it directly can be cached hard too.
+            if @store =>
+              @store.put des, code
+              @store.put des-min, code-min
+            t2 = Date.now!
+            @log.info "#src --> #des / #des-min ( #{t2 - t1}ms )"
 
         .catch (e) ~>
           @log.error "#src failed: ".red

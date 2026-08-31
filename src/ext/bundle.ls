@@ -377,16 +377,16 @@ build.prototype = Object.create(base.prototype) <<< do
           Promise.all ps
             .then (ret) ~>
               normal = ret.map(->it.code or it.code-min).join('')
-              minified = ret
-                .map (o) ~>
-                  if o.code-min => return o.code-min
-                  if !o.code => return ""
-                  # on failure this returns `o.code` unchanged, so the file stays in the
-                  # bundle. it used to return `undefined`, which `.join` drops silently -
-                  # one bad source file and the bundle shipped without it.
-                  minify.or-original type, o.code, {}, @log, o.name
-                .join('')
-              {code: normal, code-min: minified}
+              # off the main thread: this is where the seconds are. see minify.ls.
+              # sources that ship their own `.min` twin never reach the worker.
+              mins = ret.map (o) ~>
+                if o.code-min => return Promise.resolve o.code-min
+                if !o.code => return Promise.resolve ""
+                # on failure this resolves to `o.code` unchanged, so the file stays in
+                # the bundle. it used to be `undefined`, which `.join` drops silently -
+                # one bad source file and the bundle shipped without it.
+                minify.async-or-original type, o.code, {}, @log, o.name
+              Promise.all(mins).then (minified) -> {code: normal, code-min: minified.join('')}
 
       .then ({code, code-min}) ~>
         Promise.all [fs.write-file(des, code), fs.write-file(des-min, code-min)]

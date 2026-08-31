@@ -729,23 +729,25 @@ build.prototype = import$(Object.create(base.prototype), {
             });
           });
           return Promise.all(ps).then(function(ret){
-            var normal, minified;
+            var normal, mins;
             normal = ret.map(function(it){
               return it.code || it.codeMin;
             }).join('');
-            minified = ret.map(function(o){
+            mins = ret.map(function(o){
               if (o.codeMin) {
-                return o.codeMin;
+                return Promise.resolve(o.codeMin);
               }
               if (!o.code) {
-                return "";
+                return Promise.resolve("");
               }
-              return minify.orOriginal(type, o.code, {}, this$.log, o.name);
-            }).join('');
-            return {
-              code: normal,
-              codeMin: minified
-            };
+              return minify.asyncOrOriginal(type, o.code, {}, this$.log, o.name);
+            });
+            return Promise.all(mins).then(function(minified){
+              return {
+                code: normal,
+                codeMin: minified.join('')
+              };
+            });
           });
         }
       }).then(function(arg$){

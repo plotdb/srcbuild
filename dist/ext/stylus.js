@@ -55,50 +55,58 @@ stylusbuild.prototype = import$(Object.create(base.prototype), {
     };
   },
   build: function(files){
-    var i$, len$, ref$, file, mtime, src, des, desMin, t1, code, desdir, e, results$ = [], this$ = this;
-    for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
-      ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
-      ref$ = this.map(file), src = ref$.src, des = ref$.des, desMin = ref$.desMin;
-      if (!fs.existsSync(src) || aux.newer(des, mtime)) {
-        if (this.store) {
-          [des, desMin].map(fn$);
+    var this$ = this;
+    return Promise.all(files.map(function(arg$){
+      var file, mtime;
+      file = arg$.file, mtime = arg$.mtime;
+      return this$.buildOne(file, mtime);
+    }));
+  },
+  buildOne: function(file, mtime){
+    var ref$, src, des, desMin, t1, this$ = this;
+    ref$ = this.map(file), src = ref$.src, des = ref$.des, desMin = ref$.desMin;
+    if (!fs.existsSync(src) || aux.newer(des, mtime)) {
+      if (this.store) {
+        [des, desMin].map(function(it){
+          return this$.store.ensure(it);
+        });
+      }
+      return Promise.resolve();
+    }
+    t1 = Date.now();
+    return Promise.resolve().then(function(){
+      var code;
+      code = fs.readFileSync(src).toString();
+      if (/^\/\/- ?(module) ?/.exec(code)) {
+        return null;
+      }
+      fsExtra.ensureDirSync(path.dirname(des));
+      return new Promise(function(res, rej){
+        return stylus(code).set('filename', src).render(function(e, css){
+          if (e) {
+            return rej(e);
+          } else {
+            return res(css);
+          }
+        });
+      });
+    }).then(function(css){
+      if (css === null) {
+        return;
+      }
+      return minify.asyncOrOriginal('css', css, {}, this$.log, src).then(function(codeMin){
+        fs.writeFileSync(des, css);
+        fs.writeFileSync(desMin, codeMin);
+        if (this$.store) {
+          this$.store.put(des, css);
+          this$.store.put(desMin, codeMin);
         }
-        continue;
-      }
-      try {
-        t1 = Date.now();
-        code = fs.readFileSync(src).toString();
-        if (/^\/\/- ?(module) ?/.exec(code)) {
-          continue;
-        }
-        desdir = path.dirname(des);
-        fsExtra.ensureDirSync(desdir);
-        results$.push(stylus(code).set('filename', src).render(fn1$));
-      } catch (e$) {
-        e = e$;
-        this.log.error((src + " failed: ").red);
-        results$.push(this.log.error(e.message.toString()));
-      }
-    }
-    return results$;
-    function fn$(it){
-      return this$.store.ensure(it);
-    }
-    function fn1$(e, css){
-      var codeMin, t2;
-      if (e) {
-        throw e;
-      }
-      codeMin = minify.orOriginal('css', css, {}, this$.log, src);
-      fs.writeFileSync(des, css);
-      fs.writeFileSync(desMin, codeMin);
-      if (this$.store) {
-        this$.store.put(des, css);
-        this$.store.put(desMin, codeMin);
-      }
-      t2 = Date.now();
-      return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (t2 - t1) + "ms )");
-    }
+        return this$.log.info(src + " --> " + des + " / " + desMin + " ( " + (Date.now() - t1) + "ms )");
+      });
+    })['catch'](function(e){
+      this$.log.error((src + " failed: ").red);
+      return this$.log.error(e.message.toString());
+    });
   },
   purge: function(files){
     var i$, len$, ref$, file, mtime, src, des, desMin, results$ = [], this$ = this;
