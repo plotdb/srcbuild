@@ -1,4 +1,4 @@
-require! <[fs path fs-extra pug livescript uglify-js uglifycss stylus js-yaml marked crypto @plotdb/colors]>
+require! <[fs path fs-extra pug livescript stylus js-yaml marked crypto @plotdb/colors ../minify]>
 require! <[./base ../aux ./bundle ../hashstore]>
 
 cwd = process.cwd!
@@ -176,22 +176,26 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
               ret += """<link rel="block" href="#url">"""
 
           return ret
-        'lsc': (text, opt) ->
+        # `~>` not `->`: these need the builder's logger. the `bundle` filter above
+        # already binds the same way.
+        'lsc': (text, opt) ~>
           code = livescript.compile(text,{bare:true,header:false})
           # we may need an option to turn off uglify-js but for now we will enable it by default.
           # we disable `compress` since we may somehow postprocess code in function ( such as in `@plotdb/block` )
           # yet some code we need may be treated as unused and  removed by compress option
-          code-min = uglify-js.minify(code,{compress:false}).code or ''
-          return code-min
+          # pug filters are synchronous by contract, so this one stays on the event
+          # loop even after the builders moved off it. inline `include:lsc` snippets are
+          # small; a whole bundle is not, and that is the one that got moved.
+          return minify.or-original \js, code, {compress: false}, @log, (opt or {}).filename
         'lson': (text, opt) -> return livescript.compile(text,{bare:true,header:false,json:true})
-        'stylus': (text, opt) ->
+        'stylus': (text, opt) ~>
           code = stylus(text)
             .set \filename, 'inline'
             .define 'index', (a,b) ->
               a = (a.string or a.val).split(' ')
               return new stylus.nodes.Unit(a.indexOf b.val)
             .render!
-          code-min = uglifycss.processString(code, uglyComments: true)
+          minify.or-original \css, code, {}, @log, 'inline stylus'
         'md': (text, opt) -> marked.parse text
       json: -> JSON.parse(fs.read-file-sync it)
       md: marked.parse

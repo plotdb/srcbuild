@@ -1,4 +1,4 @@
-require! <[path crypto uglify-js uglifycss @loadingio/debounce.js]>
+require! <[path crypto @loadingio/debounce.js ../minify]>
 require! <[./base ../aux ../hashstore]>
 fs = require "fs-extra"
 
@@ -381,9 +381,10 @@ build.prototype = Object.create(base.prototype) <<< do
                 .map (o) ~>
                   if o.code-min => return o.code-min
                   if !o.code => return ""
-                  return if type == \js => uglify-js.minify(o.code).code
-                  else if type == \css => uglifycss.processString(o.code, uglyComments: true)
-                  else o.code
+                  # on failure this returns `o.code` unchanged, so the file stays in the
+                  # bundle. it used to return `undefined`, which `.join` drops silently -
+                  # one bad source file and the bundle shipped without it.
+                  minify.or-original type, o.code, {}, @log, o.name
                 .join('')
               {code: normal, code-min: minified}
 

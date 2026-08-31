@@ -1,4 +1,4 @@
-require! <[fs path fs-extra stylus uglifycss @plotdb/colors]>
+require! <[fs path fs-extra stylus @plotdb/colors ../minify]>
 require! <[./base ../aux ../adapter]>
 
 stylusbuild = (opt={}) ->
@@ -44,7 +44,7 @@ stylusbuild.prototype = Object.create(base.prototype) <<< do
           .set \filename, src
           .render (e, css) ~>
             if e => throw e
-            code-min = uglifycss.processString(css, uglyComments: true)
+            code-min = minify.or-original \css, css, {}, @log, src
             fs.write-file-sync des, css
             fs.write-file-sync des-min, code-min
             if @store =>

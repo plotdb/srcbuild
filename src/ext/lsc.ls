@@ -1,4 +1,4 @@
-require! <[fs path stream fs-extra livescript uglify-js @plotdb/colors]>
+require! <[fs path stream fs-extra livescript @plotdb/colors ../minify]>
 require! <[./base ../aux ../adapter]>
 
 glslify = null
@@ -50,7 +50,9 @@ lscbuild.prototype = Object.create(base.prototype) <<< do
 
         .then (code) ~>
           if !code => return
-          code-min = uglify-js.minify(code).code or ''
+          # `or ''` here used to write an empty .min.js whenever uglify errored, and the
+          # server happily served it. keep the unminified code instead.
+          code-min = minify.or-original \js, code.toString!, {}, @log, src
           fs.write-file-sync des, code
           fs.write-file-sync des-min, code-min
           # `/js/site.min.js` gets a content-addressed twin the same way a bundle does,
