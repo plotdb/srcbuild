@@ -109,6 +109,30 @@ There is no sweep: expiry happens when that url is next rebuilt. So nothing grow
 without bound, but a url that never changes again keeps whatever it had.
 
 
+## Waiting for the first build
+
+`lsp` returns the watcher; `watcher.ready` is a promise that resolves once every
+adapter's initial scan has built, including the bundles those builds triggered.
+
+```js
+const srcbuild = require('@plotdb/srcbuild').lsp({base: 'web'});
+await srcbuild.ready;
+app.listen(port);
+```
+
+Without it a host starts serving during the first build, which is the heaviest build of
+the process's life. That is where cold-start flakiness comes from: on makechart, every
+one of 38 database connection timeouts over four years fell within 30s of a build event,
+28 of them within 30s of a start, and none at all in the 30-120s band.
+
+It never rejects. A source that fails to build has already logged; refusing to start
+over one bad file would be worse than serving the rest.
+
+Bundles are waited for separately from the adapters, because a bundle is not built by
+the watcher noticing a file - it is built because a pug page named it through the
+`bundle` filter, one tick after that page's own build resolved.
+
+
 ## Minification
 
 Minification runs on a `worker_threads` worker, not on the main thread.
@@ -145,6 +169,23 @@ On failure the minifier returns the input unchanged and logs. It never writes an
 output: `uglify-js.minify` signals a syntax error by returning `{error}` with no `code`
 field, and reading `.code` off that used to yield an empty `.min.js`, or - inside a
 bundle's `join` - a file that silently vanished from the output.
+
+
+## Burst rebuilds
+
+While a bundle is being built, further requests for that same bundle do not queue. They
+set a flag, and the run in flight does exactly one more pass when it finishes - which
+reads whatever is on disk by then, so it subsumes every request that arrived while it
+was busy. N requests cost at most two builds.
+
+This matters because rebuilds arrive in bursts: `fedep` touching every lib file, or a
+save that invalidates a shared include. Before this, makechart's log shows one bundle
+built back to back at 8.6s, 6.4s and 3.4s. Moving minification to a worker does not help
+there - it only moves the queue onto the other thread.
+
+`force` is sticky across the collapse: if any collapsed request needed the freshness
+guard bypassed ( because the source *list* changed, which mtimes cannot show ), the
+rerun bypasses it too.
 
 
 ## Custom Adapter

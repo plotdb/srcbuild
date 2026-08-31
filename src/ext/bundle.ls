@@ -201,6 +201,8 @@ build = (o={}) ->
   else if (!(o.relative-path?) or o.relative-path) and @cfgfn => path.dirname(@cfgfn)
   else process.cwd!
   @log = o.logger or aux.logger
+  # in-flight builds, keyed by `<type>/<name>`. see `build-by-spec`.
+  @_inflight = {}
   @reload!
   @init-adapter opt
   @
@@ -321,7 +323,71 @@ build.prototype = Object.create(base.prototype) <<< do
 
   des-path: ({name, type}) -> return build.des-path {desdir: @desdir, name, type}
 
+  # one build per bundle at a time.
+  #
+  # rebuilds arrive in bursts - fedep touching every lib file, a save that invalidates a
+  # shared include - and the same bundle gets asked for several times within seconds.
+  # each request used to start its own full read + minify: makechart's log has
+  # editor-base.min.js built back to back at 8.6s, 6.4s, 3.4s. moving minify to a worker
+  # does not help with that, it only moves the queue onto the other thread.
+  #
+  # so: while a build is running, further requests for the same bundle do not queue.
+  # they set a flag, and when the run finishes it does exactly one more pass - which
+  # reads whatever is on disk by then, so it subsumes every request that arrived while
+  # it was busy. n requests cost at most two builds instead of n.
+  #
+  # `force` is sticky across the collapse: if any of the collapsed requests needed the
+  # freshness guard bypassed ( the source *list* changed, which mtimes cannot show ),
+  # the rerun has to bypass it too, or the coalescing would swallow that build.
   build-by-spec: (spec, opt = {}) ->
+    if !spec => return Promise.resolve!
+    key = "#{spec.type}/#{spec.name}"
+    if @_inflight[key] =>
+      st = @_inflight[key]
+      st.rerun = true
+      st.force = st.force or !!opt.force
+      return st.promise
+    # the options for the *next* pass live on `st`, not in a local: livescript declares
+    # a fresh `opt` inside the nested closure, so assigning to the parameter there is
+    # silently a no-op and the rerun loses its force flag.
+    st = {rerun: false, force: false, opt: opt}
+    @_inflight[key] = st
+    step = ~>
+      @run-build-by-spec spec, st.opt .then (ret) ~>
+        if !st.rerun => return ret
+        st.rerun = false
+        st.opt = ({} <<< st.opt) <<< {force: (st.force or st.opt.force)}
+        st.force = false
+        step!
+    st.promise = Promise.resolve!.then(step)
+      .then (ret) ~>
+        delete @_inflight[key]
+        return ret
+      .catch (e) ~>
+        delete @_inflight[key]
+        throw e
+    return st.promise
+
+  # resolves when no bundle build is in flight.
+  #
+  # `watcher.ready` needs this separately from the adapters' own promises: a bundle is
+  # not built by the watcher noticing a file, it is built because a pug page named it
+  # through the `bundle` filter, and that build is scheduled a tick *after* the page's
+  # own build has already resolved. waiting on the pug adapter alone would report ready
+  # with every bundle still unwritten.
+  idle: (rounds = 50) ->
+    (resolve) <~ new Promise _
+    step = (n) ~>
+      ps = [v.promise for k, v of @_inflight]
+      if n <= 0 =>
+        @log.warn "bundle builds have not settled after #rounds rounds; continuing.".yellow
+        return resolve!
+      if ps.length => return Promise.all(ps).then -> step(n - 1)
+      # nothing in flight, but see above - look again once the queue has drained.
+      set-immediate ~> if Object.keys(@_inflight).length => step(n - 1) else resolve!
+    step rounds
+
+  run-build-by-spec: (spec, opt = {}) ->
     <~ Promise.resolve!then _
     if !spec => return
     {name,type} = spec

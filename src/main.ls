@@ -9,6 +9,7 @@ module.exports = do
     base = if Array.isArray(base) => base else [base]
     adapters = []
     stores = []
+    bundlers = []
     # `.map` and not `for`: each base needs its own scope, since the store handler
     # below closes over that base's pug builder.
     base.map (b) ->
@@ -27,6 +28,7 @@ module.exports = do
       # notice. the store only announces a real hash change, so page -> asset -> page
       # settles in one pass instead of looping.
       if store => store.on \change, ({url}) -> pugbuilder.invalidate-url url
+      bundlers.push bundler
       adapters.push bundler.get-adapter!
       adapters ++= [
         new lsc({base: b, store} <<< opt{logger,i18n,ignored} <<< (opt.lsc or {}))
@@ -38,4 +40,16 @@ module.exports = do
     # exposed so a host can hand the same store to its express view engine instead of
     # letting the view engine re-read the manifest from disk.
     watcher.stores = stores
+    # resolves when every adapter's initial scan has finished building.
+    #
+    # a host that starts listening before this settles serves requests while the first
+    # build is still running - which is exactly when the build is heaviest, and, before
+    # minify moved to a worker, when it was blocking the loop outright. that is now a
+    # choice the host can make rather than one it cannot see: `await srcbuild.ready`.
+    #
+    # it never rejects. a build that fails has already logged; refusing to start the
+    # server over one bad source file would be worse than serving the rest.
+    watcher.ready = Promise.all(adapters.map -> it.ready or Promise.resolve!)
+      .then -> Promise.all bundlers.map -> it.idle!
+      .then -> void
     watcher

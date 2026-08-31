@@ -15,7 +15,7 @@ module.exports = {
   i18n: i18n,
   hashstore: hashstore,
   lsp: function(opt){
-    var base, adapters, stores, watcher, ref$;
+    var base, adapters, stores, bundlers, watcher, ref$;
     opt == null && (opt = {});
     base = opt.base || 'web';
     base = Array.isArray(base)
@@ -23,6 +23,7 @@ module.exports = {
       : [base];
     adapters = [];
     stores = [];
+    bundlers = [];
     base.map(function(b){
       var store, ref$, bundler, pugbuilder;
       store = (opt.hash || {}).enabled ? new hashstore(import$((ref$ = {
@@ -47,6 +48,7 @@ module.exports = {
           return pugbuilder.invalidateUrl(url);
         });
       }
+      bundlers.push(bundler);
       adapters.push(bundler.getAdapter());
       return adapters = adapters.concat([
         new lsc(import$((ref$ = {
@@ -66,6 +68,13 @@ module.exports = {
       adapters: adapters
     }, ref$.logger = opt.logger, ref$.i18n = opt.i18n, ref$.ignored = opt.ignored, ref$));
     watcher.stores = stores;
+    watcher.ready = Promise.all(adapters.map(function(it){
+      return it.ready || Promise.resolve();
+    })).then(function(){
+      return Promise.all(bundlers.map(function(it){
+        return it.idle();
+      }));
+    }).then(function(){});
     return watcher;
   }
 };

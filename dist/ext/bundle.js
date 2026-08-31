@@ -405,6 +405,7 @@ build = function(o){
       ? path.dirname(this.cfgfn)
       : process.cwd();
   this.log = o.logger || aux.logger;
+  this._inflight = {};
   this.reload();
   this.initAdapter(opt);
   return this;
@@ -658,6 +659,79 @@ build.prototype = import$(Object.create(base.prototype), {
     });
   },
   buildBySpec: function(spec, opt){
+    var key, st, step, this$ = this;
+    opt == null && (opt = {});
+    if (!spec) {
+      return Promise.resolve();
+    }
+    key = spec.type + "/" + spec.name;
+    if (this._inflight[key]) {
+      st = this._inflight[key];
+      st.rerun = true;
+      st.force = st.force || !!opt.force;
+      return st.promise;
+    }
+    st = {
+      rerun: false,
+      force: false,
+      opt: opt
+    };
+    this._inflight[key] = st;
+    step = function(){
+      return this$.runBuildBySpec(spec, st.opt).then(function(ret){
+        var ref$;
+        if (!st.rerun) {
+          return ret;
+        }
+        st.rerun = false;
+        st.opt = (ref$ = import$({}, st.opt), ref$.force = st.force || st.opt.force, ref$);
+        st.force = false;
+        return step();
+      });
+    };
+    st.promise = Promise.resolve().then(step).then(function(ret){
+      delete this$._inflight[key];
+      return ret;
+    })['catch'](function(e){
+      delete this$._inflight[key];
+      throw e;
+    });
+    return st.promise;
+  },
+  idle: function(rounds){
+    var this$ = this;
+    rounds == null && (rounds = 50);
+    return new Promise(function(resolve){
+      var step;
+      step = function(n){
+        var ps, res$, k, ref$, v;
+        res$ = [];
+        for (k in ref$ = this$._inflight) {
+          v = ref$[k];
+          res$.push(v.promise);
+        }
+        ps = res$;
+        if (n <= 0) {
+          this$.log.warn(("bundle builds have not settled after " + rounds + " rounds; continuing.").yellow);
+          return resolve();
+        }
+        if (ps.length) {
+          return Promise.all(ps).then(function(){
+            return step(n - 1);
+          });
+        }
+        return setImmediate(function(){
+          if (Object.keys(this$._inflight).length) {
+            return step(n - 1);
+          } else {
+            return resolve();
+          }
+        });
+      };
+      return step(rounds);
+    });
+  },
+  runBuildBySpec: function(spec, opt){
     var this$ = this;
     opt == null && (opt = {});
     return Promise.resolve().then(function(){

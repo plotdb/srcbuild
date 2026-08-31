@@ -51,7 +51,9 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
       },
       initScan: opt.initScan
     });
-    return this.adapter.init();
+    return this.adapter.ready = Promise.resolve(this.adapter.init())['catch'](function(e){
+      return this$.log.error(("initial build failed: " + e.message).red);
+    });
   },
   getAdapter: function(){
     return this.adapter;

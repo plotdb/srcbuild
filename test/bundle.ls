@@ -139,3 +139,104 @@ test 'a pending spec flush is not cancelled by another bundler', ->
 
 
 
+
+
+# --- burst rebuilds ----------------------------------------------------------------
+
+# count how many times the bundle is actually written, by wrapping the real builder.
+counted = (b) ->
+  n = 0
+  real = b.run-build-by-spec
+  b.run-build-by-spec = (...args) ->
+    n++
+    real.apply b, args
+  return -> n
+
+
+test 'a burst of rebuilds for one bundle collapses to two passes', ->
+  # fedep touching every lib file, or a save that invalidates a shared include, asks for
+  # the same bundle several times within seconds. each ask used to be a full read +
+  # minify: makechart's log has one bundle built back to back at 8.6s / 6.4s / 3.4s.
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  spec = b.specmgr.get {type: \js, name: \v}
+  count = counted b
+  ps = [1 to 6].map -> b.build-by-spec spec, {force: true}
+  <-! Promise.all(ps).then
+  # one run for the request that arrived first, one more to cover everything that
+  # arrived while it was busy. never six.
+  assert.strictEqual count!, 2, "expected 2 passes, got #{count!}"
+  assert.ok fs.exists-sync(des(root, 'v.min.js'))
+
+
+test 'every caller in the burst gets a settled promise', ->
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  spec = b.specmgr.get {type: \js, name: \v}
+  settled = 0
+  ps = [1 to 4].map -> b.build-by-spec(spec, {force: true}).then -> settled++
+  <-! Promise.all(ps).then
+  assert.strictEqual settled, 4
+
+
+test 'force survives the collapse', ->
+  # the freshness guard skips a build when the output is newer than its sources. a
+  # request that arrives mid-build *because the source list changed* must not be
+  # swallowed by a rerun that then decides it has nothing to do.
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  spec = b.specmgr.get {type: \js, name: \v}
+  seen = []
+  real = b.run-build-by-spec
+  b.run-build-by-spec = (s, opt) -> seen.push !!(opt or {}).force ; real.call b, s, opt
+  p1 = b.build-by-spec spec              # no force
+  p2 = b.build-by-spec spec, {force: true}   # collapses into p1's rerun
+  <-! Promise.all([p1, p2]).then
+  assert.strictEqual seen.length, 2
+  assert.strictEqual seen.1, true, "the rerun must carry the force flag: #{JSON.stringify seen}"
+
+
+test 'a later, separate request still builds', ->
+  # coalescing must not turn into "we already built this once".
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  spec = b.specmgr.get {type: \js, name: \v}
+  count = counted b
+  <-! b.build-by-spec(spec, {force: true}).then
+  <-! b.build-by-spec(spec, {force: true}).then
+  assert.strictEqual count!, 2
+
+
+test 'two different bundles do not block each other', ->
+  root = write tmpdir!, {
+    "#{lib 'a/main/index.min.js'}": 'AAA;'
+    "#{lib 'b/main/index.min.js'}": 'BBB;'
+  }
+  b = mk root
+  for n in <[x y]> =>
+    src = [path.join(root, lib("#{if n == 'x' => 'a' else 'b'}/main/index.min.js"))]
+    b.specmgr.update {type: \js, name: n, src: src, codesrc: src, specsrc: ['p.pug']}
+  count = counted b
+  ps = <[x y]>.map (n) ~> b.build-by-spec b.specmgr.get({type: \js, name: n}), {force: true}
+  <-! Promise.all(ps).then
+  assert.strictEqual count!, 2
+  assert.ok fs.exists-sync(des(root, 'x.min.js'))
+  assert.ok fs.exists-sync(des(root, 'y.min.js'))
+
+
+test 'idle resolves once the bundles are written', ->
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  b.build-by-spec b.specmgr.get({type: \js, name: \v}), {force: true}
+  <-! b.idle!.then
+  assert.ok fs.exists-sync(des(root, 'v.min.js')), 'idle resolved before the write'

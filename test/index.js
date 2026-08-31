@@ -5,3 +5,4 @@ require('./pug.ls');
 require('./hash.ls');
 require('./asset.ls');
 require('./minify.ls');
+require('./ready.ls');

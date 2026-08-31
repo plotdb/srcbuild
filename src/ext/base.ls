@@ -33,7 +33,11 @@ basebuild.prototype = Object.create(Object.prototype) <<< do
       purge: (files) ~> @purge files
       resolve: (file) ~> @resolve file
       init-scan: opt.init-scan
-    @adapter.init!
+    # the initial build's promise, not just a fire-and-forget. `watcher.ready` collects
+    # these so a host can wait for the first build before it starts serving - see
+    # main.ls. it was being discarded, which is why nothing downstream could know.
+    @adapter.ready = Promise.resolve(@adapter.init!).catch (e) ~>
+      @log.error "initial build failed: #{e.message}".red
   get-adapter: -> @adapter
 
 module.exports = basebuild
