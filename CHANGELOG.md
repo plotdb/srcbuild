@@ -1,5 +1,46 @@
 # Change Log
 
+## v0.1.3
+
+the build no longer competes with the server it is building for.
+
+ - minification runs on a `worker_threads` worker. `uglify-js` is synchronous cpu work
+   and srcbuild usually shares a process with a server: measured on a 0.94MB bundle,
+   2677ms of minify blocked the event loop for 1769ms in one stall. that is long enough
+   for a cold `pg.Pool` connect with a 2s timeout to expire while its handshake
+   callbacks cannot be delivered, so the request fails with a database error that has
+   nothing to do with the database. through the worker the same bundle costs ~20% more
+   total time - 9ms of it moving strings across - and the loop's worst tick was 13ms.
+   no size threshold, because cost does not track size: 800KB of one corpus took 88ms
+   and 960KB took 2319ms. the worker spawns on first use, is `unref`'d, and is
+   terminated after 30s idle; if it cannot start or dies, everything falls back
+   in-process. `SRCBUILD_MINIFY_WORKER=0` disables it. the `lsc` and `stylus` pug
+   filters stay synchronous - pug's filter interface has no async form - and they only
+   handle small inline snippets.
+ - fix bug: a minifier error produced *nothing*, silently. `uglify-js.minify` signals a
+   syntax error by returning `{error}` with no `code` field; every call site read
+   `.code` off that and got `undefined`, then either wrote it as an empty `.min.js`
+   ( `lsc`, the pug filters ) or joined it into a bundle, where `[a, undefined, b]
+   .join('')` simply drops it - one source file with a typo and the bundle shipped
+   without that file, no log, no throw, and a complete unminified twin next to it. all
+   minifier calls now go through `src/minify.ls`, which returns the input unchanged on
+   failure and logs. an unminified asset is bigger, not broken.
+ - a bundle builds one at a time. rebuilds arrive in bursts - fedep touching every lib
+   file, a save invalidating a shared include - and each request used to start its own
+   full read + minify. requests that arrive during a build now set a flag instead of
+   queueing, and the run in flight does one more pass when it finishes, which subsumes
+   all of them: n requests cost at most two builds. `force` is sticky across the
+   collapse, so a build needed because the source *list* changed is never swallowed.
+ - `watcher.ready` resolves when every adapter's initial scan has built, including the
+   bundles those builds triggered. `adapter.init!` returned a promise that every caller
+   discarded, so a host could not tell a running first build from a finished one - and
+   hosts `listen` before they `watch`, i.e. they serve requests during the heaviest
+   build of the process's life. it never rejects: one bad source file should not stop a
+   server from starting.
+ - `stylus`' builder returns a promise instead of being a synchronous `for` loop, which
+   is what lets its initial scan participate in `ready`.
+
+
 ## v0.1.2
 
  - warn when the injected `lib.pug` is not the one shipped with the running srcbuild.
