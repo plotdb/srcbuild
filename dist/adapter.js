@@ -12,7 +12,7 @@ adapter = function(opt){
   this.base = opt.base || '.';
   this.log = opt.logger || aux.logger;
   this.initScan = opt.initScan != null ? opt.initScan : true;
-  this.ignored = (opt.watcher || (opt.watcher = {})).ignored || [];
+  this.ignored = opt.ignored || (opt.watcher || (opt.watcher = {})).ignored || [];
   this.depends = {
     on: {},
     by: {}
@@ -189,14 +189,10 @@ adapter.prototype = import$(Object.create(Object.prototype), {
     }
     initBuilds = [];
     recurse = function(root){
-      var len1, len2, files, i$, len$, file, stat, e, results$ = [];
+      var files, i$, len$, file, stat, e, results$ = [];
       if (!fs.existsSync(root)) {
         return;
       }
-      len1 = fs.readdirSync(root).length;
-      len2 = fs.readdirSync(root).filter(function(it){
-        return !anymatch(this$.ignored || [], it);
-      }).length;
       files = fs.readdirSync(root).filter(function(it){
         return !anymatch(this$.ignored || [], it);
       }).map(function(it){
@@ -212,6 +208,7 @@ adapter.prototype = import$(Object.create(Object.prototype), {
         }
         if (stat.isDirectory()) {
           recurse(file);
+          continue;
         }
         if (!this$.isSupported(file)) {
           continue;

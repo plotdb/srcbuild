@@ -5,7 +5,7 @@ adapter = (opt={}) ->
   @base = opt.base or '.'
   @log = opt.logger or aux.logger
   @init-scan = if opt.init-scan? => opt.init-scan else true
-  @ignored = opt.{}watcher.ignored or []
+  @ignored = opt.ignored or opt.{}watcher.ignored or []
   @depends = {on: {}, by: {}}
   # files whose `get-dependencies` threw. their edges are unknown ( or stale ), so we
   # retry them on every change event until the analysis succeeds. see `change`.
@@ -112,8 +112,6 @@ adapter.prototype = Object.create(Object.prototype) <<< do
     init-builds = []
     recurse = (root) ~>
       if !fs.exists-sync(root) => return
-      len1 = fs.readdir-sync(root).length
-      len2 = fs.readdir-sync(root).filter(~>!anymatch((@ignored or []), it)).length
       files = fs.readdir-sync root
         .filter ~> !anymatch((@ignored or []), it)
         .map -> path.normalize("#root/#it")
@@ -122,7 +120,13 @@ adapter.prototype = Object.create(Object.prototype) <<< do
           stat = fs.stat-sync(file)
         catch e # file exists, but stat-sync fails - it may be a symlink pointing to a non-existed file.
           continue
-        if stat.is-directory! => recurse file
+        if stat.is-directory!
+          recurse file
+          # a directory is never a build target. it used to fall through to the
+          # `is-supported` test below, which an extension whitelist almost always
+          # failed - but a whitelist-free builder ( `ext: '*'` ) says yes to every
+          # directory it walks.
+          continue
         if !@is-supported(file) => continue
         # this is a time consuming func call. consider ODB instead.
         # on error: simply ignore. builder will take care of it.

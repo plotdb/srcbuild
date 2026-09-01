@@ -25,7 +25,7 @@ module.exports = {
     stores = [];
     bundlers = [];
     base.map(function(b){
-      var store, ref$, bundler, pugbuilder;
+      var store, ref$, bundler, pugbuilder, rawopt;
       store = (opt.hash || {}).enabled ? new hashstore(import$((ref$ = {
         base: b
       }, ref$.logger = opt.logger, ref$), opt.hash)) : null;
@@ -50,7 +50,7 @@ module.exports = {
       }
       bundlers.push(bundler);
       adapters.push(bundler.getAdapter());
-      return adapters = adapters.concat([
+      adapters = adapters.concat([
         new lsc(import$((ref$ = {
           base: b,
           store: store
@@ -63,6 +63,16 @@ module.exports = {
       ].map(function(it){
         return it.getAdapter();
       }));
+      if (opt.raw !== false) {
+        rawopt = {
+          base: b,
+          srcdir: 'src/raw',
+          desdir: 'static',
+          ext: '*'
+        };
+        import$((rawopt.logger = opt.logger, rawopt.i18n = opt.i18n, rawopt.ignored = opt.ignored, rawopt), opt.raw || {});
+        return adapters.push(new asset(rawopt).getAdapter());
+      }
     });
     watcher = new watch((ref$ = {
       adapters: adapters

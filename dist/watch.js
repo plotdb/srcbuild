@@ -14,7 +14,7 @@ watch = function(opt){
   this.adapters = opt.adapters || [];
   this.chokidarCfg = {
     persistent: true,
-    ignored: opt.ignored || ['.git'],
+    ignored: aux.ignored(opt.ignored),
     ignoreInitial: true
   };
   this._root = opt.root

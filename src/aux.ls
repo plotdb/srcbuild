@@ -23,4 +23,16 @@ aux.logger = log = {}
     args = ( ["#{n.0.toUpperCase![n.1]}\t: [build]"] ++ args)
     console[n.0].apply console, args
 
+# junk no project ever wants built, copied or watched. always applied, with
+# `opt.ignored` appended - a whitelist-free builder ( `ext: '*'` ) would otherwise
+# happily ship a `.DS_Store` into the document root.
+#
+# every pattern is written `**/x`, which matches both a bare basename and a full path.
+# that matters: chokidar tests full paths, while the initial scan in `adapter.init`
+# tests the basenames it gets back from `readdir`.
+aux.junk = <[**/.git **/.git/** **/.DS_Store **/Thumbs.db **/*.swp **/*~]>
+
+aux.ignored = (ignored) ->
+  aux.junk ++ (if !ignored => [] else if Array.isArray(ignored) => ignored else [ignored])
+
 module.exports = aux

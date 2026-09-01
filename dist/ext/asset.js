@@ -9,12 +9,16 @@ aux = require('../aux');
 adapter = require('../adapter');
 assetbuild = function(opt){
   opt == null && (opt = {});
-  this._ext = opt.ext || ['png', 'gif', 'jpg', 'svg', 'json'];
+  this._ext = opt.ext === '*'
+    ? null
+    : opt.ext || ['png', 'gif', 'jpg', 'svg', 'json'];
   this.init(import$({
     srcdir: 'src/assets',
     desdir: 'static/assets'
   }, opt));
-  this._re = new RegExp("^" + this.desdir + "/(.+?.(?:" + this._ext.join('|') + "))$");
+  this._re = this._ext
+    ? new RegExp("^" + this.desdir + "/(.+?.(?:" + this._ext.join('|') + "))$")
+    : new RegExp("^" + this.desdir + "/(.+)$");
   return this;
 };
 assetbuild.prototype = import$(Object.create(base.prototype), {
@@ -23,14 +27,24 @@ assetbuild.prototype = import$(Object.create(base.prototype), {
   },
   isSupported: function(file){
     var ref$;
-    return in$((ref$ = file.split('.'))[ref$.length - 1] || '', this._ext) && file.startsWith(this.srcdir);
+    if (!file.startsWith(this.srcdir)) {
+      return false;
+    }
+    if (!this._ext) {
+      return true;
+    }
+    return in$((ref$ = file.split('.'))[ref$.length - 1] || '', this._ext);
   },
   resolve: function(file){
-    var ret;
+    var ret, src;
     if (!(ret = this._re.exec(file))) {
       return null;
     }
-    return path.join(this.srcdir, ret[1] + "");
+    src = path.join(this.srcdir, ret[1] + "");
+    if (!fs.existsSync(src)) {
+      return null;
+    }
+    return src;
   },
   map: function(file){
     return {
@@ -62,16 +76,17 @@ assetbuild.prototype = import$(Object.create(base.prototype), {
     return results$;
   },
   purge: function(files){
-    var i$, len$, ref$, file, mtime, src, des;
+    var i$, len$, ref$, file, mtime, src, des, results$ = [];
     for (i$ = 0, len$ = files.length; i$ < len$; ++i$) {
       ref$ = files[i$], file = ref$.file, mtime = ref$.mtime;
       ref$ = this.map(file), src = ref$.src, des = ref$.des;
       if (!fs.existsSync(des)) {
-        return;
+        continue;
       }
       fs.unlinkSync(des);
-      this.log.warn((src + " --> " + des + " deleted.").yellow);
+      results$.push(this.log.warn((src + " --> " + des + " deleted.").yellow));
     }
+    return results$;
   }
 });
 module.exports = assetbuild;

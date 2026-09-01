@@ -28,14 +28,45 @@ These fields will be passed to all customized builders. Additionally, configurat
 
     srcbuild.lsp {bundle: { ... /* this will be passed to bundle builder */ }, ...}
 
-For `lsp`, there are 4 different builders:
+For `lsp`, there are 6 different builders:
 
  - `lsc`: build `*.ls` from `src/ls` to `static/js`.
  - `stylus`: build `*.styl` from `src/styl` to `static/css`.
  - `pug`: build `*.pug` from `src/pug` to `static`.
  - `bundle`: bundle `css` and `js` files
+ - `asset`: copy whitelisted extensions from `src/assets` to `static/assets`.
+ - `raw`: copy `src/raw` to `static`, verbatim. see below.
 
 See following sections for additional options in custom builders.
+
+
+## src/raw - the hand-written half of the document root
+
+Everything above generates its output. A site also has files that are simply *served*:
+`favicon.ico`, `robots.txt`, images, fonts, a `site.webmanifest`. Put them in `src/raw`
+and they land in `static` unchanged:
+
+    src/raw/favicon.ico          ->  static/favicon.ico
+    src/raw/robots.txt           ->  static/robots.txt
+    src/raw/assets/img/logo.png  ->  static/assets/img/logo.png
+
+No extension whitelist - the tree exists to be copied, so filtering it could only mean
+silently failing to ship a file someone added. Junk is still excluded ( `.DS_Store`,
+`Thumbs.db`, `*.swp`, `*~`, `.git` ), and anything in `ignored` on top of that.
+
+    srcbuild.lsp {raw: {srcdir: 'src/raw', desdir: 'static'}}   # the defaults
+    srcbuild.lsp {raw: false}                                   # turn it off
+
+**Why this is worth doing.** It is what makes `static/` entirely derived. Once no file
+exists only there, `rm -rf static` is always safe, the directory does not belong in
+version control, and a deploy is a build rather than a merge of hand-placed files with
+generated ones.
+
+**`raw` is a separate option from `asset`, deliberately.** `asset` is the older
+whitelist-based copier ( `src/assets/**.{png,gif,jpg,svg,json} -> static/assets` ), and
+projects override it - servebase points it at `src/pug` so images can sit next to the
+pug that uses them. If `raw` were another entry in `asset`, every one of those overrides
+would silently drop it. Both run; migrate at your own pace.
 
 
 ## Content Addressing

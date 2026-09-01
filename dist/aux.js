@@ -47,4 +47,12 @@ aux.logger = log = {};
     return console[n[0]].apply(console, args);
   };
 });
+aux.junk = ['**/.git', '**/.git/**', '**/.DS_Store', '**/Thumbs.db', '**/*.swp', '**/*~'];
+aux.ignored = function(ignored){
+  return aux.junk.concat(!ignored
+    ? []
+    : Array.isArray(ignored)
+      ? ignored
+      : [ignored]);
+};
 module.exports = aux;

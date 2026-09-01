@@ -1,5 +1,33 @@
 # Change Log
 
+## v0.1.4
+
+ - `src/raw -> static`, verbatim and without an extension whitelist. the tree for files
+   that are served rather than generated: `favicon.ico`, `robots.txt`, images, fonts. it
+   is the piece that lets a project say `static/` is entirely derived - and once that is
+   true, `rm -rf static` is safe and the directory does not belong in version control.
+   a whitelist there could only mean silently failing to ship a file someone added, so
+   there is none; see the `ignored` note below for what stops a `.DS_Store` instead.
+   `raw: false` turns it off. it is a separate option from `asset` on purpose: projects
+   override `asset` ( servebase points it at `src/pug` ), and an override would have
+   silently taken the new default down with it.
+ - `ignored` now always includes `.git`, `.DS_Store`, `Thumbs.db`, `*.swp` and `*~`,
+   with anything the caller passes appended rather than replacing them. it also reaches
+   the builders' initial scan, which never received it before - `opt.watcher.ignored`
+   was read, and nothing set it. patterns are written `**/x` so they match both a bare
+   basename and a full path, because chokidar tests one and the initial scan the other.
+ - fix bug: a directory could be treated as a build target. the initial scan recursed
+   into it and then fell through to `isSupported`, which an extension whitelist almost
+   always failed - so it went unnoticed until a builder with no whitelist said yes to
+   every directory it walked.
+ - fix bug: the asset builder claimed outputs it had no source for. `watch.demand` uses
+   the first adapter whose `resolve` answers, so with `desdir: static` it would answer
+   for a pug page or a compiled `.ls` and resolve it to a path that does not exist.
+   `resolve` now requires the source to be there.
+ - fix bug: purging a batch stopped at the first file whose copy was already gone,
+   leaving the rest of the batch deployed. a directory removal arrives as one batch.
+
+
 ## v0.1.3
 
 the build no longer competes with the server it is building for.

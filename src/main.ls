@@ -36,6 +36,19 @@ module.exports = do
         pugbuilder
         new asset({base: b} <<< opt{logger,i18n,ignored} <<< (opt.asset or {}))
       ].map -> it.get-adapter!
+      # `src/raw` is the hand-written half of the document root: favicon, robots.txt,
+      # images, anything that ships as-is. it is a separate option from `asset` and not
+      # another entry in it, because a project that overrides `asset` ( servebase points
+      # it at `src/pug` ) would otherwise silently drop this default along with it.
+      #
+      # last in the adapter list on purpose. `watch.demand` takes the first adapter that
+      # claims an output, and this one's desdir is the whole document root; `resolve`
+      # already refuses to claim what it has no source for, and the ordering means it
+      # never has to.
+      if opt.raw != false =>
+        rawopt = {base: b, srcdir: 'src/raw', desdir: 'static', ext: '*'}
+        rawopt <<< opt{logger,i18n,ignored} <<< (opt.raw or {})
+        adapters.push (new asset rawopt).get-adapter!
     watcher = new watch({adapters} <<< opt{logger, i18n, ignored})
     # exposed so a host can hand the same store to its express view engine instead of
     # letting the view engine re-read the manifest from disk.
