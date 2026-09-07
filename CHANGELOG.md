@@ -1,5 +1,21 @@
 # Change Log
 
+## v0.1.5
+
+ - fix bug: a bundle source that could not be read was silently dropped. both reads
+   ( the plain path and its `.min` twin ) resolved to `""` on failure, the empty
+   strings joined into the output, and the build then logged the byte count it had
+   written as a success. loading.io shipped a `vendor` bundle missing 3 of its 34
+   sources for a week: the site's own `corecfg` was one of them, so every block
+   registry lookup fell through to a default that resolves a different url, and the
+   page 404'd on a module that was there. worse, the truncated output is newer than
+   every source, so the freshness check added in v0.1.0 skipped the spec on every
+   later build - it only ended when an unrelated edit happened to touch a source.
+   a source that yields nothing from both paths is now named, with the errno, and the
+   bundle is not written; the stale output stays older than its sources, so the next
+   build retries instead of skipping.
+
+
 ## v0.1.4
 
  - `src/raw -> static`, verbatim and without an extension whitelist. the tree for files

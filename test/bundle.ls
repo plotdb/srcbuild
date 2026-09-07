@@ -240,3 +240,37 @@ test 'idle resolves once the bundles are written', ->
   b.build-by-spec b.specmgr.get({type: \js, name: \v}), {force: true}
   <-! b.idle!.then
   assert.ok fs.exists-sync(des(root, 'v.min.js')), 'idle resolved before the write'
+
+
+test 'an unreadable source aborts the bundle instead of shipping it truncated', ->
+  # loading.io lost three of `vendor`'s 34 sources for a week. both reads returned "",
+  # the empty strings joined into the output, and the success log reported the byte
+  # count it did write. the truncated file was then newer than every source, so the
+  # freshness check above skipped the spec on every later build - the loss only ended
+  # when an unrelated edit happened to touch one of the sources.
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  errs = []
+  b.log = {} <<< quiet <<< {error: (...args) -> errs.push args.map(String).join(' ')}
+  src = [
+    path.join(root, lib('a/main/index.min.js'))
+    path.join(root, lib('gone/main/index.min.js'))
+  ]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
+  assert.equal fs.exists-sync(des(root, 'v.js')), false, 'a partial bundle must not be written'
+  assert.equal fs.exists-sync(des(root, 'v.min.js')), false
+  assert.ok errs.some(-> ~it.index-of 'gone'), "the failing source must be named: #{JSON.stringify errs}"
+  assert.ok errs.some(-> ~it.index-of 'ENOENT'), "and why it failed: #{JSON.stringify errs}"
+
+
+test 'a source that ships only its .min twin still bundles', ->
+  # the guard above must not fire on the normal case: one of the two paths is missing
+  # for nearly every source in a real bundle.
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  src = [path.join(root, lib('a/main/index.min.js'))]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
+  assert.ok fs.exists-sync(des(root, 'v.min.js'))
+  assert.strictEqual fs.read-file-sync(des(root, 'v.js')).to-string!, 'AAA;'

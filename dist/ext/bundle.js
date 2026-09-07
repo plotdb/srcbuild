@@ -761,7 +761,7 @@ build.prototype = import$(Object.create(base.prototype), {
         };
       }
       return fs.ensureDir(desdir).then(function(){
-        var ref$, re, reMin, ps;
+        var ref$, re, reMin, read, ps;
         if (type === 'block') {
           if (!this$.mgr || !this$.mgr.bundle) {
             throw new Error("block bundling requires manager of @plotdb/block provided via bundler option.");
@@ -784,26 +784,48 @@ build.prototype = import$(Object.create(base.prototype), {
           });
         } else {
           ref$ = [new RegExp("\\.min\\." + ext + "$"), new RegExp("\\." + ext + "$")], re = ref$[0], reMin = ref$[1];
+          read = function(n){
+            return fs.readFile(n).then(function(b){
+              return {
+                code: b.toString()
+              };
+            })['catch'](function(e){
+              return {
+                code: "",
+                err: e
+              };
+            });
+          };
           ps = srcs.map(function(f){
             var fMin;
             f = f.replace(re, "." + ext);
             fMin = f.replace(reMin, ".min." + ext);
-            return fs.readFile(f)['catch'](function(){
-              return "";
-            }).then(function(b){
-              return fs.readFile(fMin)['catch'](function(){
-                return "";
-              }).then(function(bm){
-                return {
-                  name: f,
-                  code: b.toString(),
-                  codeMin: bm.toString()
-                };
-              });
+            return Promise.all([read(f), read(fMin)]).then(function(arg$){
+              var b, bm;
+              b = arg$[0], bm = arg$[1];
+              return {
+                name: f,
+                code: b.code,
+                codeMin: bm.code,
+                errs: [b.err, bm.err].filter(function(it){
+                  return it;
+                })
+              };
             });
           });
           return Promise.all(ps).then(function(ret){
-            var normal, mins;
+            var gone, i$, len$, o, reason, normal, mins;
+            gone = ret.filter(function(it){
+              return !it.code && !it.codeMin;
+            });
+            if (gone.length) {
+              for (i$ = 0, len$ = gone.length; i$ < len$; ++i$) {
+                o = gone[i$];
+                reason = o.errs.map(fn$).join(', ');
+                this$.log.error(("bundle " + type + "/" + name + ": " + o.name + " unreadable ( " + reason + " )").red);
+              }
+              throw new Error(type + "/" + name + ": " + gone.length + " of " + ret.length + " sources unreadable; not written");
+            }
             normal = ret.map(function(it){
               return it.code || it.codeMin;
             }).join('');
@@ -822,6 +844,9 @@ build.prototype = import$(Object.create(base.prototype), {
                 codeMin: minified.join('')
               };
             });
+            function fn$(it){
+              return it.code || it.message;
+            }
           });
         }
       }).then(function(arg$){

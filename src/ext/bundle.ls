@@ -430,18 +430,35 @@ build.prototype = Object.create(base.prototype) <<< do
           # `three.js/main/index.js` used to derive `three.min.js/main/index.js`. anchor
           # it at the end of the path instead.
           [re, re-min] = [new RegExp("\\.min\\.#{ext}$"), new RegExp("\\.#{ext}$")]
+          # a source normally ships only one of the two ( plain or `.min` ), so a single
+          # failed read is expected and silent. keep the error around anyway: it is the
+          # only thing that can explain the pair failing together.
+          read = (n) ->
+            fs.read-file n
+              .then (b) -> {code: b.to-string!}
+              .catch (e) -> {code: "", err: e}
           ps = srcs.map (f) ->
             f = f.replace re, ".#ext"
             f-min = f.replace re-min, ".min.#ext"
-            fs.read-file f
-              .catch -> return ""
-              .then (b) ->
-                fs.read-file f-min
-                  .catch -> ""
-                  .then (bm) ->
-                    {name: f, code: b.toString!, code-min: bm.toString!}
+            Promise.all [read(f), read(f-min)]
+              .then ([b, bm]) ->
+                {name: f, code: b.code, code-min: bm.code, errs: [b.err, bm.err].filter(->it)}
           Promise.all ps
             .then (ret) ~>
+              # neither path readable: this source contributes an empty string to the
+              # join and the bundle ships without it - no error, and a success log
+              # reporting the byte count it did write. worse, that truncated output is
+              # newer than every source, so `newer` above skips the spec on every later
+              # build and the loss survives until something else happens to touch a
+              # source. name what failed and write nothing.
+              gone = ret.filter -> !it.code and !it.code-min
+              if gone.length =>
+                for o in gone
+                  reason = o.errs.map(-> it.code or it.message).join(', ')
+                  @log.error "bundle #type/#name: #{o.name} unreadable ( #reason )".red
+                throw new Error(
+                  "#type/#name: #{gone.length} of #{ret.length} sources unreadable; not written"
+                )
               normal = ret.map(->it.code or it.code-min).join('')
               # off the main thread: this is where the seconds are. see minify.ls.
               # sources that ship their own `.min` twin never reach the worker.
