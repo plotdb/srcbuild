@@ -451,7 +451,12 @@ build.prototype = Object.create(base.prototype) <<< do
               # newer than every source, so `newer` above skips the spec on every later
               # build and the loss survives until something else happens to touch a
               # source. name what failed and write nothing.
-              gone = ret.filter -> !it.code and !it.code-min
+              # this asks whether both reads *failed*, not whether both came back empty:
+              # a source can legitimately compile to nothing ( loading.io's `font.styl`
+              # is one commented-out `@import`, so `font.css` is 0 bytes and always has
+              # been ), and refusing to build over that would be the same silent-loss
+              # bug wearing the opposite sign.
+              gone = ret.filter -> it.errs.length >= 2
               if gone.length =>
                 for o in gone
                   reason = o.errs.map(-> it.code or it.message).join(', ')

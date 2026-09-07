@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.1.6
+
+ - fix bug ( v0.1.5 ): the unreadable-source guard keyed on "produced no bytes" rather
+   than "could not be read", so a source that legitimately compiles to nothing aborted
+   the bundle it belongs to. loading.io's `font.styl` is a single commented-out
+   `@import`, so `font.css` and `font.min.css` are both 0 bytes and always have been -
+   `css/vendor` would never have been written again. it now fires only when both reads
+   actually failed.
+
+
 ## v0.1.5
 
  - fix bug: a bundle source that could not be read was silently dropped. both reads

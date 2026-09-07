@@ -274,3 +274,21 @@ test 'a source that ships only its .min twin still bundles', ->
   <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
   assert.ok fs.exists-sync(des(root, 'v.min.js'))
   assert.strictEqual fs.read-file-sync(des(root, 'v.js')).to-string!, 'AAA;'
+
+
+test 'a source that is legitimately empty does not abort the bundle', ->
+  # loading.io's `font.styl` is a single commented-out `@import`, so `font.css` and
+  # `font.min.css` are both 0 bytes and always have been. keying the guard above on
+  # "produced no bytes" rather than "could not be read" would refuse to build
+  # `css/vendor` forever - the same silent-loss bug wearing the opposite sign.
+  root = write tmpdir!, {
+    'static/css/font.css': ''
+    'static/css/font.min.css': ''
+    'static/css/index.min.css': 'body{color:red}'
+  }
+  b = mk root
+  src = <[static/css/font.min.css static/css/index.min.css]>.map -> path.join root, it
+  b.specmgr.update {type: \css, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  <-! b.build-by-spec(b.specmgr.get({type: \css, name: \v}), {force: true}).then
+  assert.ok fs.exists-sync(des(root, 'v.css')), 'the empty source must not abort the build'
+  assert.strictEqual fs.read-file-sync(des(root, 'v.css')).to-string!, 'body{color:red}'

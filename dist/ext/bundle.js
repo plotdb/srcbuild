@@ -816,7 +816,7 @@ build.prototype = import$(Object.create(base.prototype), {
           return Promise.all(ps).then(function(ret){
             var gone, i$, len$, o, reason, normal, mins;
             gone = ret.filter(function(it){
-              return !it.code && !it.codeMin;
+              return it.errs.length >= 2;
             });
             if (gone.length) {
               for (i$ = 0, len$ = gone.length; i$ < len$; ++i$) {
