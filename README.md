@@ -16,6 +16,8 @@ where
  - `i18n`: i18n object.
  - `ignored`: files to be ignored. in [anymatch](https://github.com/micromatch/anymatch)-compatible definition.
    - by default ['.git']
+ - `hash`: optional. content addressing for built files. off unless `enabled`.
+   see [Content Addressing](#content-addressing).
  - `logger`: optional. for logging output. use `console.log` by default.
    - sample logger with `pino`:
 
@@ -26,14 +28,195 @@ These fields will be passed to all customized builders. Additionally, configurat
 
     srcbuild.lsp {bundle: { ... /* this will be passed to bundle builder */ }, ...}
 
-For `lsp`, there are 4 different builders:
+For `lsp`, there are 6 different builders:
 
  - `lsc`: build `*.ls` from `src/ls` to `static/js`.
  - `stylus`: build `*.styl` from `src/styl` to `static/css`.
  - `pug`: build `*.pug` from `src/pug` to `static`.
  - `bundle`: bundle `css` and `js` files
+ - `asset`: copy whitelisted extensions from `src/assets` to `static/assets`.
+ - `raw`: copy `src/raw` to `static`, verbatim. see below.
 
 See following sections for additional options in custom builders.
+
+
+## src/raw - the hand-written half of the document root
+
+Everything above generates its output. A site also has files that are simply *served*:
+`favicon.ico`, `robots.txt`, images, fonts, a `site.webmanifest`. Put them in `src/raw`
+and they land in `static` unchanged:
+
+    src/raw/favicon.ico          ->  static/favicon.ico
+    src/raw/robots.txt           ->  static/robots.txt
+    src/raw/assets/img/logo.png  ->  static/assets/img/logo.png
+
+No extension whitelist - the tree exists to be copied, so filtering it could only mean
+silently failing to ship a file someone added. Junk is still excluded ( `.DS_Store`,
+`Thumbs.db`, `*.swp`, `*~`, `.git` ), and anything in `ignored` on top of that.
+
+    srcbuild.lsp {raw: {srcdir: 'src/raw', desdir: 'static'}}   # the defaults
+    srcbuild.lsp {raw: false}                                   # turn it off
+
+**Why this is worth doing.** It is what makes `static/` entirely derived. Once no file
+exists only there, `rm -rf static` is always safe, the directory does not belong in
+version control, and a deploy is a build rather than a merge of hand-placed files with
+generated ones.
+
+**`raw` is a separate option from `asset`, deliberately.** `asset` is the older
+whitelist-based copier ( `src/assets/**.{png,gif,jpg,svg,json} -> static/assets` ), and
+projects override it - servebase points it at `src/pug` so images can sit next to the
+pug that uses them. If `raw` were another entry in `asset`, every one of those overrides
+would silently drop it. Both run; migrate at your own pace.
+
+
+## Content Addressing
+
+A generated file keeps its name and changes its bytes on every build, so its url cannot
+be cached: the browser has to ask every time whether it is still current. Content
+addressing gives it a second name derived from what is inside it, which can be cached
+forever because that name can never mean anything else.
+
+Off by default. It rewrites the url of every generated asset in every page, and buys
+nothing until the server in front actually serves the addressed form with a long
+`max-age`, so a project turns it on once it has done that:
+
+    srcbuild.lsp {
+      hash:
+        enabled: true       # off unless set
+        mode: 'filename'    # or 'query'
+        keep: 3             # filename mode: generations kept
+        keepDays: 0         # filename mode: also keep anything younger than this
+    }
+
+Two modes:
+
+    filename   also write `<name>.<hash>[.min].<ext>`; pages point at that.
+               a url names exactly one byte sequence, so it can be immutable. old
+               copies have to be expired, and html older than the retention window
+               points at a name that is gone.
+    query      leave one file and point at `<name>.min.js?v=<hash>`. nothing
+               accumulates and nothing 404s, but html older than the last build
+               silently gets whatever the file holds now, and some CDNs ignore the
+               query string when caching.
+
+Either way the plain name is always written and always current. It is what already
+deployed html points at, what a page rendered before the first build falls back to, and
+what a `try_files` in the server can fall back to in filename mode.
+
+Covers what `lsc`, `stylus` and `bundle` produce - reached through the `script` and
+`css` mixins and the `bundle` filter. A url written directly into a template, an image,
+or anything not built here is passed through untouched.
+
+### The manifest
+
+`<base>/.bundle-dep/manifest.json`, one per base, shared by every builder:
+
+    "/js/site.min.js": {
+      "url": "/js/site.4b6ac41e1bea.min.js",
+      "refs": ["src/pug/index.pug"],
+      "generations": [{"files": ["static/js/site.4b6ac41e1bea.min.js"], "at": ...}]
+    }
+
+`url` is what the mixins look up - pug cannot compute it, since it never reads the
+built file. `refs` is which pug files embedded the url, and is the only way back to
+them when the hash moves: a built asset is in no page's pug dependency graph, so
+nothing else can know a page went stale. `generations` is what lets old copies be
+expired.
+
+It is an index into `static/`, so the two belong together. Losing it is recoverable but
+not free: `url` comes back on the next build ( existing outputs are adopted ), while
+`refs` only comes back when pages actually render.
+
+### Retention ( filename mode )
+
+A generation is deleted only once it is both beyond `keep` and older than `keepDays`.
+Count alone answers the wrong question - three rebuilds can be three hours or three
+months, while the risk is how long a browser tab stays open. `keepDays` defaults to 0,
+because a client holding old js across a deploy is already exposed to backend api
+drift, and the answer to that is a "site updated, please reload" prompt rather than
+keeping every artefact forever. Raise it if you would rather spend disk.
+
+There is no sweep: expiry happens when that url is next rebuilt. So nothing grows
+without bound, but a url that never changes again keeps whatever it had.
+
+
+## Waiting for the first build
+
+`lsp` returns the watcher; `watcher.ready` is a promise that resolves once every
+adapter's initial scan has built, including the bundles those builds triggered.
+
+```js
+const srcbuild = require('@plotdb/srcbuild').lsp({base: 'web'});
+await srcbuild.ready;
+app.listen(port);
+```
+
+Without it a host starts serving during the first build, which is the heaviest build of
+the process's life. That is where cold-start flakiness comes from: on makechart, every
+one of 38 database connection timeouts over four years fell within 30s of a build event,
+28 of them within 30s of a start, and none at all in the 30-120s band.
+
+It never rejects. A source that fails to build has already logged; refusing to start
+over one bad file would be worse than serving the rest.
+
+Bundles are waited for separately from the adapters, because a bundle is not built by
+the watcher noticing a file - it is built because a pug page named it through the
+`bundle` filter, one tick after that page's own build resolved.
+
+
+## Minification
+
+Minification runs on a `worker_threads` worker, not on the main thread.
+
+It matters when srcbuild shares a process with a server, which is the usual dev setup.
+`uglify-js` is synchronous CPU work and a large bundle takes seconds: measured on a
+0.94MB bundle, 2677ms of minify blocked the event loop for 1769ms in one stall. Nothing
+else in that process runs during it - long enough for a fresh `pg.Pool` connect with a
+2s timeout to expire while its handshake callbacks cannot be delivered, so the request
+fails with a database error that has nothing to do with the database.
+
+The same bundle through the worker: ~20% more total time ( a worker has its own heap and
+warms its own JIT ), 9ms of it spent moving the strings across, and the loop's worst tick
+was 13ms.
+
+There is no size threshold, because cost does not track size: in the same corpus 800KB
+took 88ms and 960KB took 2319ms, one construct in the last chunk being pathological for
+uglify. Everything the builders minify goes across.
+
+The worker is spawned on first use, `unref`'d, and terminated after 30s idle. If it
+cannot start or it dies, minification falls back in-process for the rest of the run -
+slower, never broken.
+
+`SRCBUILD_MINIFY_WORKER=0` keeps everything in-process.
+
+Two things stay synchronous, both deliberately:
+
+ - the `lsc` and `stylus` **pug filters**. Pug's filter interface has no async form.
+   They handle inline `include:lsc` snippets, which are small.
+ - a source file that ships its own `.min` twin is never minified at all, so it never
+   reaches the worker.
+
+On failure the minifier returns the input unchanged and logs. It never writes an empty
+output: `uglify-js.minify` signals a syntax error by returning `{error}` with no `code`
+field, and reading `.code` off that used to yield an empty `.min.js`, or - inside a
+bundle's `join` - a file that silently vanished from the output.
+
+
+## Burst rebuilds
+
+While a bundle is being built, further requests for that same bundle do not queue. They
+set a flag, and the run in flight does exactly one more pass when it finishes - which
+reads whatever is on disk by then, so it subsumes every request that arrived while it
+was busy. N requests cost at most two builds.
+
+This matters because rebuilds arrive in bursts: `fedep` touching every lib file, or a
+save that invalidates a shared include. Before this, makechart's log shows one bundle
+built back to back at 8.6s, 6.4s and 3.4s. Moving minification to a worker does not help
+there - it only moves the queue onto the other thread.
+
+`force` is sticky across the collapse: if any collapsed request needed the freshness
+guard bypassed ( because the source *list* changed, which mtimes cannot show ), the
+rerun bypasses it too.
 
 
 ## Custom Adapter
@@ -236,6 +419,11 @@ where the fields of the parameters:
 
 By default the above script mixin generates a script tag pointing to files under `/assets/lib/<name>/<version>/<path>`. You can customize the `/assets/lib/` by calling `libLoader.root(desiredPath)`.
 
+With [content addressing](#content-addressing) enabled, a url these mixins emit is
+looked up in the manifest and replaced by its addressed form when there is one. A url
+with no entry - an external url, a file this build did not produce, anything before its
+first build - is emitted unchanged, with `libLoader._v` appended as before.
+
 
 Additionally, you can also use a list of modules:
 
@@ -280,6 +468,17 @@ Following functions are added:
  - `md(code)`: convert `markdown` to `HTML`.
  - `yaml(path)`: read `yaml` file and return object. (tentative)
  - `yamls(path)`: read content of `yaml` files under `path` directory. (tentative)
+ - `asseturl(url, src)`: the content-addressed form of a built file's url, or `url`
+   unchanged when there is none. `src` is the pug file asking, recorded so the page can
+   be re-rendered when the hash moves. used by the `script` and `css` mixins.
+ - `bundleurl({type, name, min, src})`: the same lookup for a bundle, addressed by its
+   spec rather than its url. returns null when the bundle has not been built yet, so
+   callers fall back to the plain name.
+ - `hashfile({type, name, files, src})`: declare a bundle from a list of files. used by
+   the `pack` option of the mixins.
+
+`asseturl` and `bundleurl` do nothing but return their input when content addressing is
+off, so a template can call them unconditionally.
 
 
 ### Additional filters / functions

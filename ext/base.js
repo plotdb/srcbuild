@@ -27,7 +27,8 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
     this.log = opt.logger || aux.logger;
     this.base = opt.base || this.base || '.';
     this.srcdir = path.normalize(path.join(this.base, opt.srcdir || this.srcdir || '.'));
-    return this.desdir = path.normalize(path.join(this.base, opt.desdir || this.desdir || '.'));
+    this.desdir = path.normalize(path.join(this.base, opt.desdir || this.desdir || '.'));
+    return this.ignored = aux.ignored(opt.ignored);
   },
   initAdapter: function(opt){
     var this$ = this;
@@ -49,9 +50,12 @@ basebuild.prototype = import$(Object.create(Object.prototype), {
       resolve: function(file){
         return this$.resolve(file);
       },
-      initScan: opt.initScan
+      initScan: opt.initScan,
+      ignored: this.ignored
     });
-    return this.adapter.init();
+    return this.adapter.ready = Promise.resolve(this.adapter.init())['catch'](function(e){
+      return this$.log.error(("initial build failed: " + e.message).red);
+    });
   },
   getAdapter: function(){
     return this.adapter;
