@@ -658,6 +658,41 @@ build.prototype = import$(Object.create(base.prototype), {
       type: type
     });
   },
+  settle: function(files, timeout, interval){
+    var deadline, sizeOf, step;
+    timeout == null && (timeout = 500);
+    interval == null && (interval = 50);
+    deadline = Date.now() + timeout;
+    sizeOf = function(f){
+      var e;
+      try {
+        return fs.statSync(f).size;
+      } catch (e$) {
+        e = e$;
+        return -1;
+      }
+    };
+    step = function(){
+      var before;
+      before = files.map(sizeOf);
+      return new Promise(function(res){
+        return setTimeout(res, interval);
+      }).then(function(){
+        var after;
+        after = files.map(sizeOf);
+        if (Date.now() > deadline) {
+          return;
+        }
+        if (after.every(function(s, i){
+          return s >= 0 && s === before[i];
+        })) {
+          return;
+        }
+        return step();
+      });
+    };
+    return step();
+  },
   buildBySpec: function(spec, opt){
     var key, st, step, this$ = this;
     opt == null && (opt = {});
@@ -761,7 +796,7 @@ build.prototype = import$(Object.create(base.prototype), {
         };
       }
       return fs.ensureDir(desdir).then(function(){
-        var ref$, re, reMin, read, ps;
+        var ref$, re, reMin, read, readAll, missing;
         if (type === 'block') {
           if (!this$.mgr || !this$.mgr.bundle) {
             throw new Error("block bundling requires manager of @plotdb/block provided via bundler option.");
@@ -796,29 +831,53 @@ build.prototype = import$(Object.create(base.prototype), {
               };
             });
           };
-          ps = srcs.map(function(f){
-            var fMin;
-            f = f.replace(re, "." + ext);
-            fMin = f.replace(reMin, ".min." + ext);
-            return Promise.all([read(f), read(fMin)]).then(function(arg$){
-              var b, bm;
-              b = arg$[0], bm = arg$[1];
-              return {
-                name: f,
-                code: b.code,
-                codeMin: bm.code,
-                errs: [b.err, bm.err].filter(function(it){
-                  return it;
-                })
-              };
-            });
-          });
-          return Promise.all(ps).then(function(ret){
-            var gone, i$, len$, o, reason, normal, mins;
-            gone = ret.filter(function(it){
+          readAll = function(){
+            return Promise.all(srcs.map(function(f){
+              var fMin;
+              f = f.replace(re, "." + ext);
+              fMin = f.replace(reMin, ".min." + ext);
+              return Promise.all([read(f), read(fMin)]).then(function(arg$){
+                var b, bm;
+                b = arg$[0], bm = arg$[1];
+                return {
+                  name: f,
+                  code: b.code,
+                  codeMin: bm.code,
+                  errs: [b.err, bm.err].filter(function(it){
+                    return it;
+                  })
+                };
+              });
+            }));
+          };
+          missing = function(ret){
+            return ret.filter(function(it){
               return it.errs.length >= 2;
             });
+          };
+          return readAll().then(function(ret){
+            var names;
+            if (!missing(ret).length) {
+              return ret;
+            }
+            names = missing(ret).map(function(o){
+              return [o.name, o.name.replace(reMin, ".min." + ext)];
+            });
+            return this$.settle([].concat.apply([], names)).then(function(){
+              return readAll();
+            });
+          }).then(function(ret){
+            var gone, more, ref$, i$, len$, o, reason, normal, mins;
+            gone = missing(ret);
             if (gone.length) {
+              more = gone.length > 1 ? " ( +" + (gone.length - 1) + " more )" : '';
+              if (gone.every(function(it){
+                return it.errs.every(function(it){
+                  return it.code === 'ENOENT';
+                });
+              })) {
+                throw ref$ = new Error(type + "/" + name + ": " + gone[0].name + " not found" + more + " - still being rebuilt?"), ref$.terse = true, ref$;
+              }
               for (i$ = 0, len$ = gone.length; i$ < len$; ++i$) {
                 o = gone[i$];
                 reason = o.errs.map(fn$).join(', ');
@@ -872,6 +931,9 @@ build.prototype = import$(Object.create(base.prototype), {
           elapsed: elapsed
         }, out);
       })['catch'](function(e){
+        if (e.terse) {
+          return this$.log.error((e.message + "; " + des + " not written.").red);
+        }
         this$.log.error((des + " failed: ").red);
         return this$.log.error({
           err: e

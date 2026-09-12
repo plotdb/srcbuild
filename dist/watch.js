@@ -22,6 +22,7 @@ watch = function(opt){
       ? opt.root
       : [opt.root]
     : ['.'];
+  this.links = new Set();
   this.log = opt.logger || aux.logger;
   this.init();
   return this;
@@ -35,13 +36,32 @@ watch.prototype = import$(Object.create(Object.prototype), {
     }
   },
   init: function(){
-    var this$ = this;
+    var relink, this$ = this;
+    relink = function(p){
+      var e;
+      if (this$.links.has(p)) {
+        return;
+      }
+      try {
+        if (!fs.lstatSync(p).isSymbolicLink()) {
+          return;
+        }
+      } catch (e$) {
+        e = e$;
+        return;
+      }
+      this$.links.add(p);
+      return this$.watcher.add(p);
+    };
     this.watcher = chokidar.watch(this._root, this.chokidarCfg).on('add', function(it){
       return this$.add(path.normalize(it));
     }).on('change', function(it){
+      relink(it);
       return this$.change(path.normalize(it));
     }).on('unlink', function(it){
       return this$.unlink(path.normalize(it));
+    }).on('addDir', relink).on('unlinkDir', function(it){
+      return this$.links['delete'](it);
     });
     this.log.info(("watching " + this._root.join(' ') + " for file change").cyan);
     this.changeDebounced = debounce(function(){

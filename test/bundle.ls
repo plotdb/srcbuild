@@ -261,7 +261,29 @@ test 'an unreadable source aborts the bundle instead of shipping it truncated', 
   assert.equal fs.exists-sync(des(root, 'v.js')), false, 'a partial bundle must not be written'
   assert.equal fs.exists-sync(des(root, 'v.min.js')), false
   assert.ok errs.some(-> ~it.index-of 'gone'), "the failing source must be named: #{JSON.stringify errs}"
-  assert.ok errs.some(-> ~it.index-of 'ENOENT'), "and why it failed: #{JSON.stringify errs}"
+  # a source that is simply not there reports in one line, without a stack: nothing in
+  # this code path is worth debugging, and the answer is nearly always the next line.
+  assert.ok errs.some(-> ~it.index-of 'not found'), "and why it failed: #{JSON.stringify errs}"
+  assert.ok errs.some(-> ~it.index-of 'still being rebuilt'), "with the usual cause named: #{JSON.stringify errs}"
+  assert.equal errs.length, 1, "one line, not a stack: #{JSON.stringify errs}"
+
+
+test 'a source that is mid-rebuild is read again rather than failing the bundle', ->
+  # every module's build script opens with `rm -rf dist`, so a bundle built at that
+  # instant finds both paths of that source gone. that is not a broken bundle, it is a
+  # bundle read a few hundred ms too early - and reporting it as an error taught
+  # developers of linked modules to ignore the error log.
+  root = write tmpdir!, {"#{lib 'a/main/index.min.js'}": 'AAA;'}
+  b = mk root
+  errs = []
+  b.log = {} <<< quiet <<< {error: (...args) -> errs.push args.map(String).join(' ')}
+  late = path.join(root, lib('late/main/index.min.js'))
+  src = [path.join(root, lib('a/main/index.min.js')), late]
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  set-timeout (-> fs-extra.output-file-sync late, 'BBB;'), 120
+  <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
+  assert.strictEqual fs.read-file-sync(des(root, 'v.js')).to-string!, 'AAA;BBB;'
+  assert.deepStrictEqual errs, [], "a source that arrives during the wait is not an error: #{JSON.stringify errs}"
 
 
 test 'a source that ships only its .min twin still bundles', ->

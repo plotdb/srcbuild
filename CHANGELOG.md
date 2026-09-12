@@ -1,5 +1,48 @@
 # Change Log
 
+## v0.1.7
+
+ - fix bug: a module symlinked into the watched tree after the watcher started never
+   reported another change. chokidar's fsevents backend installs a watcher only in
+   `initWatch`, and everything it discovers at runtime goes through
+   `_addToFsEvents( .., forceAdd: true )`, which scans the path once and skips that
+   call. for a plain directory it does not matter - the parent's fsevents stream is
+   recursive - but a symlink's target lives outside the watched tree, and the transform
+   that maps the target's events back onto the link's own path exists only on the
+   watcher `initWatch` would have created. so the link reported its initial contents
+   and then went silent: the target's edits still arrived, under the real path, which
+   is not what a bundle spec names. servebase hit this every time a frontend
+   dependency was added, since `fedep` runs on `npm install` and creates the link
+   while the dev server is up - the bundle went stale and stayed stale until the
+   process was restarted, with no error anywhere to say so. new symlinks are now added
+   again when one is seen, which takes the route that does call `initWatch`. both
+   `addDir` and `change` have to ask: `fedep` replaces a link with `remove` + `symlink`,
+   and depending on how fsevents coalesced that pair chokidar reports it as one or the
+   other, roughly half each. watching `addDir` alone left the second shape unrepaired,
+   which is what made the failure look intermittent rather than absolute. each link is
+   re-added once, and again only after an `unlinkDir` says it really went away: `add` on
+   a path that already has a watcher appends a second listener rather than replacing the
+   first, and these events arrive in bursts - one `fedep` run re-announces the same link
+   six times over. adding on every one of them piled up duplicate listeners for the rest
+   of the session, and a watcher in that state stopped reporting a linked module's
+   rebuilds after six to ten of them, which is how this was found.
+ - a bundle source that is unreadable is now read once more, after waiting for it to
+   exist and hold its size, before the build gives up. every module's build script opens
+   with `rm -rf dist`, so a bundle built at that instant finds both of that source's
+   paths gone - roughly one rebuild in five, in practice. the guard added in v0.1.5 is
+   right to refuse a truncated bundle, but this is not a truncated bundle, it is one
+   read a few hundred ms too early. waiting for a stable size rather than merely
+   retrying matters: `>` creates the file before it has content, so a blind second read
+   can find it present and incomplete, which is the silent-loss bug v0.1.5 exists to
+   prevent.
+ - a source that is still missing after that wait, with nothing but ENOENT to show for
+   it, now reports in a single line naming the file and asking whether it is being
+   rebuilt, instead of a two-line failure plus a stack. the stack described this code,
+   never the cause, and an ERROR that fires during ordinary work is an ERROR developers
+   learn to scroll past. other read failures are unchanged.
+ - bump version to 0.1.7
+
+
 ## v0.1.6
 
  - fix bug ( v0.1.5 ): the unreadable-source guard keyed on "produced no bytes" rather

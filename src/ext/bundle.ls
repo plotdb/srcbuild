@@ -323,6 +323,26 @@ build.prototype = Object.create(base.prototype) <<< do
 
   des-path: ({name, type}) -> return build.des-path {desdir: @desdir, name, type}
 
+  # a source in the middle of its own rebuild is briefly absent - every module's build
+  # script starts with `rm -rf dist` - and then briefly incomplete, since `>` creates the
+  # file before it has content. both states are wrong to read, in opposite ways: absent
+  # aborts the bundle, incomplete writes a truncated one that is newer than every source,
+  # so nothing ever retries it. wait for each file to exist *and* hold its size, which
+  # covers both, then let the caller read again. on timeout it resolves anyway - the
+  # read that follows reports what is actually wrong.
+  settle: (files, timeout = 500, interval = 50) ->
+    deadline = Date.now! + timeout
+    size-of = (f) -> try (fs.stat-sync f).size catch e => -1
+    step = ~>
+      before = files.map size-of
+      new Promise (res) -> set-timeout res, interval
+        .then ~>
+          after = files.map size-of
+          if Date.now! > deadline => return
+          if after.every((s, i) -> s >= 0 and s == before[i]) => return
+          step!
+    step!
+
   # one build per bundle at a time.
   #
   # rebuilds arrive in bursts - fedep touching every lib file, a save that invalidates a
@@ -437,13 +457,22 @@ build.prototype = Object.create(base.prototype) <<< do
             fs.read-file n
               .then (b) -> {code: b.to-string!}
               .catch (e) -> {code: "", err: e}
-          ps = srcs.map (f) ->
-            f = f.replace re, ".#ext"
-            f-min = f.replace re-min, ".min.#ext"
-            Promise.all [read(f), read(f-min)]
-              .then ([b, bm]) ->
-                {name: f, code: b.code, code-min: bm.code, errs: [b.err, bm.err].filter(->it)}
-          Promise.all ps
+          read-all = ->
+            Promise.all srcs.map (f) ->
+              f = f.replace re, ".#ext"
+              f-min = f.replace re-min, ".min.#ext"
+              Promise.all [read(f), read(f-min)]
+                .then ([b, bm]) ->
+                  {name: f, code: b.code, code-min: bm.code, errs: [b.err, bm.err].filter(->it)}
+          missing = (ret) -> ret.filter -> it.errs.length >= 2
+          read-all!
+            .then (ret) ~>
+              # one retry, and only for what failed. a module rebuilt while the watcher
+              # is running loses both of its paths for a moment, which is not a broken
+              # bundle - it is a bundle read a few hundred ms too early.
+              if !missing(ret).length => return ret
+              names = missing(ret).map (o) -> [o.name, o.name.replace(re-min, ".min.#ext")]
+              @settle [].concat.apply([], names) .then -> read-all!
             .then (ret) ~>
               # neither path readable: this source contributes an empty string to the
               # join and the bundle ships without it - no error, and a success log
@@ -456,8 +485,15 @@ build.prototype = Object.create(base.prototype) <<< do
               # is one commented-out `@import`, so `font.css` is 0 bytes and always has
               # been ), and refusing to build over that would be the same silent-loss
               # bug wearing the opposite sign.
-              gone = ret.filter -> it.errs.length >= 2
+              gone = missing ret
               if gone.length =>
+                more = if gone.length > 1 => " ( +#{gone.length - 1} more )" else ''
+                # still not there after the wait. that is either a source this project
+                # never had, or one whose build is slower than the retry - either way the
+                # developer needs the name and nothing else, so say it in one line and
+                # skip the stack: there is no code path here to debug.
+                if gone.every(-> it.errs.every -> it.code == \ENOENT) =>
+                  throw new Error("#type/#name: #{gone.0.name} not found#more - still being rebuilt?") <<< {terse: true}
                 for o in gone
                   reason = o.errs.map(-> it.code or it.message).join(', ')
                   @log.error "bundle #type/#name: #{o.name} unreadable ( #reason )".red
@@ -490,6 +526,7 @@ build.prototype = Object.create(base.prototype) <<< do
         @log.info "bundle #des-min ( #{fs.stat-sync(des-min).size} bytes / #{elapsed}ms )"
         {type, name, elapsed} <<< out
       .catch (e) ~>
+        if e.terse => return @log.error "#{e.message}; #des not written.".red
         @log.error "#des failed: ".red
         @log.error {err: e}, e.message.toString!
 
