@@ -50,10 +50,11 @@
   },
   "devDependencies": {
     "@loadingio/bootstrap.ext": "^0.0.12",
+    "@loadingio/ldquery": "^3.0.6",
     "@plotdb/csscope": "^5.0.4",
+    "@plotdb/guides": "github:plotdb/guides#master",
     "@plotdb/rescope": "^5.0.17",
     "@plotdb/semver": "^0.0.3",
-    "@loadingio/ldquery": "^3.0.6",
     "bootstrap": "^4.6.1",
     "express": "^4.18.2",
     "fedep": "^1.6.0",

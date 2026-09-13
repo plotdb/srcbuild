@@ -11,3 +11,4 @@ alt/.bundle-dep
 dev/backlog
 alt/static/assets/
 web/static/
+/context/shared
