@@ -1,5 +1,22 @@
 # Change Log
 
+## v0.1.8
+
+ - bug fix:
+   - a page that `extends` or `include`s another is re-rendered in development when only
+     that other file changed. the view engine's freshness check compared the entry pug
+     against its precompiled view and nothing else, so editing a layout left every page
+     built on it serving the old output until the entry file itself was touched. the
+     watcher could not cover this either: `is-supported` only accepts pug under
+     `srcdir`, so anything outside it - `user/template/<board>/view/...` in servebase -
+     never enters the dependency graph at all, and the on-demand build in the view
+     engine is all those pages ever get. the dependencies pug resolved are now folded
+     into that comparison, the whole extends chain rather than direct ones only. the
+     list costs a parse to learn, so it is computed once per page, dropped whenever that
+     page is rebuilt, and skipped outside development - nothing changes under a running
+     production server, and the check would only cost it stats.
+
+
 ## v0.1.7
 
  - fix bug: a module symlinked into the watched tree after the watcher started never

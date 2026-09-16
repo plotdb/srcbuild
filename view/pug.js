@@ -8,7 +8,7 @@ pugbuild = require("../ext/pug");
 reload = require("require-reload")(require);
 fsp = fs.promises;
 pugViewEngine = function(options){
-  var opt, k, v, builder, extapi, logger, pugcache, log;
+  var opt, k, v, builder, extapi, logger, pugcache, depcache, depsMtime, log;
   opt = {
     logger: options.logger,
     i18n: options.i18n,
@@ -31,6 +31,31 @@ pugViewEngine = function(options){
   extapi = builder.getExtapi();
   logger = options.logger;
   pugcache = {};
+  depcache = {};
+  depsMtime = function(src){
+    var e;
+    if (!depcache[src]) {
+      depcache[src] = (function(){
+        try {
+          return builder.getDependencies(src);
+        } catch (e$) {
+          e = e$;
+          return [];
+        }
+      }());
+    }
+    return depcache[src].reduce(function(p, f){
+      var e;
+      return Math.max(p, (function(){
+        try {
+          return +fs.statSync(f).mtime;
+        } catch (e$) {
+          e = e$;
+          return 0;
+        }
+      }()));
+    }, 0);
+  };
   log = function(f, opt, t, type, cache){
     return logger.debug(f.replace(opt.basedir, '') + " served in " + t + "ms (" + type + (cache ? ' cached' : '') + ")");
   };
@@ -48,6 +73,9 @@ pugViewEngine = function(options){
     startTime = Date.now();
     try {
       mtimeSrc = +fs.statSync(src).mtime;
+      if (lc.dev) {
+        mtimeSrc = Math.max(mtimeSrc, depsMtime(src));
+      }
       mtime = +fs.statSync(desv).mtime;
       if (!(mtime != null) || mtimeSrc - mtime > 0) {
         throw new Error("src dirty");
@@ -91,6 +119,9 @@ pugViewEngine = function(options){
         ret = " (function() { " + ret + "; module.exports = template; })() ";
         return fsExtra.ensureDir(path.dirname(desv)).then(function(){
           return fsp.writeFile(desv, ret);
+        }).then(function(){
+          var ref$;
+          return ref$ = depcache[src], delete depcache[src], ref$;
         });
       }).then(function(){
         var ref$;
