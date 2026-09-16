@@ -1,5 +1,19 @@
 # Change Log
 
+## master
+
+ - bug fix:
+   - lib.pug is looked up both where an npm install puts it ( `dist/lib.pug` ) and where
+     `fedep publish -g` leaves it ( `lib.pug`, the package root, since publishing
+     flattens dist/ ). only the first was tried, so against a github install the
+     injected include resolved to nothing and every doctype'd page - which is to say
+     every page - failed to build. the layout is a property of the install, not
+     something this module can assume, and `main` / `bin` being rewritten by the
+     publisher is precisely why nothing else noticed. the resolved spec is remembered
+     per builder: node caches resolution hits but not misses, and a miss costs about
+     three times a hit, so the flattened case would otherwise pay for it once per page.
+
+
 ## v0.1.8
 
  - bug fix:

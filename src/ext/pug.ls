@@ -4,8 +4,11 @@ require! <[./base ../aux ./bundle ../hashstore]>
 cwd = process.cwd!
 
 # the lib.pug injected into every doctype'd page, as pug resolves it ( see `pug-resolve`
-# and the `postParse` plugin below ).
-libpug = '@/@plotdb/srcbuild/dist/lib.pug'
+# and the `postParse` plugin below ). an npm install has it under `dist/`; `fedep
+# publish -g` flattens that folder into the package root, so a github install has it
+# one level up. which one is there is a property of the install, not of this code -
+# see `libpug` below.
+libpugs = <[@/@plotdb/srcbuild/dist/lib.pug @/@plotdb/srcbuild/lib.pug]>
 
 pugbuild = (opt={}) ->
   @i18n = opt.i18n or null
@@ -29,6 +32,18 @@ pugbuild = (opt={}) ->
   @
 
 pugbuild.prototype = Object.create(base.prototype) <<< do
+  # the spec that actually resolves from this base, as a `@/` path for `pug-resolve`.
+  # a miss costs ~3x a hit and node caches only hits, so this is remembered per
+  # builder rather than paid once per doctype'd page. falls back to the canonical
+  # name when neither is there, so the failure names the path people expect.
+  libpug: ->
+    if @_libpug? => return @_libpug
+    for spec in libpugs
+      try
+        require.resolve spec.replace(/^@\//, ''), {paths: [@base]}
+        return @_libpug = spec
+    return @_libpug = libpugs.0
+
   # `lib.pug` is injected by path, resolved from the *frontend root* - so whichever copy
   # of srcbuild lands in `<base>/node_modules` wins, no matter which one is running.
   # a stale copy there is silent: pages build, nothing errors, and any feature that
@@ -37,9 +52,9 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
   check-libpug: ->
     mine = path.join(__dirname, '..', 'lib.pug')
     try
-      theirs = require.resolve libpug.replace(/^@\//, ''), {paths: [@base]}
+      theirs = require.resolve @libpug!.replace(/^@\//, ''), {paths: [@base]}
     catch e
-      return @log.warn "cannot resolve #libpug from #{@base}: #{e.message}".yellow
+      return @log.warn "cannot resolve #{@libpug!} from #{@base}: #{e.message}".yellow
     if !fs.exists-sync(mine) or path.resolve(mine) == path.resolve(theirs) => return
     try
       if fs.read-file-sync(mine).toString! == fs.read-file-sync(theirs).toString! => return
@@ -119,11 +134,11 @@ pugbuild.prototype = Object.create(base.prototype) <<< do
     ret = {} <<< (@locals or {}) <<< do
       plugins: [{
         resolve: (...args) ~> @pug-resolve.apply @, args
-        postParse: (dom, opt) ->
+        postParse: (dom, opt) ~>
           if !(dom.nodes.0 and dom.nodes.0.type == \Doctype) => return dom
           dom.nodes.splice 1, 0 {
             type: \Include, block: { type: 'Block', nodes: [] }
-            file: {type: \FileReference, filename: opt.filename, path: libpug}
+            file: {type: \FileReference, filename: opt.filename, path: @libpug!}
           }
           return dom
       }]

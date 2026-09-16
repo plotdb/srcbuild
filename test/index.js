@@ -2,6 +2,7 @@ require('livescript');
 require('./adapter.ls');
 require('./bundle.ls');
 require('./pug.ls');
+require('./libpug.ls');
 require('./view-pug.ls');
 require('./hash.ls');
 require('./asset.ls');
