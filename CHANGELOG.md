@@ -1,6 +1,6 @@
 # Change Log
 
-## master
+## v0.1.8
 
  - bug fix:
    - a page that `extends` or `include`s another is re-rendered in development when only
