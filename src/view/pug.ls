@@ -17,6 +17,16 @@ pug-view-engine = (options) ->
   #  - `buf` - source from pug file. will only be filled if precompiled js is not found in the first rendering.
   #  - `mtime` - modifiedtime for this info ( depends on source of `js` or `buf` )
   pugcache = {}
+  # depcache[src] = files `src` pulls in via extends / include, as pug resolved them.
+  # dropped whenever `src` is rebuilt, since the rebuild may have changed the list.
+  depcache = {}
+  # a page's own mtime never moves when only the file it extends was edited, and the
+  # watcher cannot cover that: `is-supported` only accepts pug under `srcdir`, so
+  # anything outside it ( `user/template/<board>/view/...` ) is never in the dependency
+  # graph. fold the dependencies' mtimes in here instead.
+  deps-mtime = (src) ->
+    if !depcache[src] => depcache[src] = try builder.get-dependencies(src) catch e then []
+    depcache[src].reduce ((p, f) -> Math.max p, (try +fs.stat-sync(f).mtime catch e then 0)), 0
   log = (f, opt, t, type, cache) ->
     logger.debug "#{f.replace(opt.basedir,'')} served in #{t}ms (#type#{if cache =>' cached' else ''})"
 
@@ -33,6 +43,9 @@ pug-view-engine = (options) ->
     try
       # ( `+` converts mtime to timestamp )
       mtime-src = +fs.stat-sync(src).mtime
+      # dev only: the list costs a parse of the whole extends chain, once per page.
+      # in production nothing changes under a running server, so it buys nothing.
+      if lc.dev => mtime-src = Math.max mtime-src, deps-mtime(src)
       mtime = +fs.stat-sync(desv).mtime
       # src file is newer - we should rebuild precompiled js
       if !(mtime?) or mtime-src - mtime > 0 => throw new Error("src dirty")
@@ -73,6 +86,7 @@ pug-view-engine = (options) ->
           ret = """ (function() { #ret; module.exports = template; })() """
           fs-extra.ensure-dir path.dirname(desv)
             .then -> fsp.write-file desv, ret
+            .then -> delete depcache[src]
         .then -> pugcache{}[desv] <<< {js: reload(desv), mtime: lc.mtime}
         .then ->
           ret = pugcache[desv].js(opt)
