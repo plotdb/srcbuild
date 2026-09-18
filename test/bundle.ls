@@ -314,3 +314,81 @@ test 'a source that is legitimately empty does not abort the bundle', ->
   <-! b.build-by-spec(b.specmgr.get({type: \css, name: \v}), {force: true}).then
   assert.ok fs.exists-sync(des(root, 'v.css')), 'the empty source must not abort the build'
   assert.strictEqual fs.read-file-sync(des(root, 'v.css')).to-string!, 'body{color:red}'
+
+
+# a source has more than one name: `get-path` writes the path a page requests, which is
+# a symlink `fedep` created into the module's own tree. chokidar follows symlinks but
+# reports each file under exactly one of its aliases, and when the frontend directory is
+# itself reachable through `node_modules` ( an npm workspace ) that one is not
+# necessarily the name the spec was told about.
+test 'a source reported under its real path still triggers its bundle', ->
+  root = tmpdir!
+  write root, {'module/m/dist/index.min.js': 'M;', 'module/m/dist/index.js': 'M;'}
+  fs-extra.ensure-dir-sync path.join(root, lib 'm')
+  fs.symlink-sync path.join(root, 'module/m/dist'), path.join(root, lib 'm/main')
+  b = mk root
+  declared = path.join(root, lib 'm/main/index.min.js')
+  real = path.join(root, 'module/m/dist/index.min.js')
+  b.specmgr.update {type: \js, name: \x, src: [declared], codesrc: [declared], specsrc: ['p.pug']}
+
+  assert.ok b.specmgr.has-code(declared), 'the name we were given'
+  # old behaviour: false. the watcher event was dropped and the bundle kept the old
+  # code, with nothing logged.
+  assert.ok b.specmgr.has-code(real), 'the same file, reached the other way'
+
+  built = []
+  b.specmgr.on \build-by-spec, (specs) -> built := built ++ specs.map (s) -> "#{s.type}/#{s.name}"
+  b.specmgr.touch-code [{file: real, mtime: 1}]
+  assert.deepEqual built, ['js/x'], 'an event under the real path must rebuild js/x'
+
+
+test 'a name nobody declared still does not trigger anything', ->
+  root = tmpdir!
+  write root, {'module/m/dist/index.min.js': 'M;', 'other.js': 'O;'}
+  b = mk root
+  declared = path.join(root, 'module/m/dist/index.min.js')
+  b.specmgr.update {type: \js, name: \x, src: [declared], codesrc: [declared], specsrc: ['p.pug']}
+  # the realpath index must not turn every event into a match.
+  assert.equal b.specmgr.has-code(path.join(root, 'other.js')), false
+  assert.equal b.specmgr.has-code(path.join(root, 'missing.js')), false
+
+
+test 'a symlink linked in after the spec was declared is still picked up', ->
+  root = tmpdir!
+  write root, {'module/m/dist/index.min.js': 'M;'}
+  b = mk root
+  declared = path.join(root, lib 'm/main/index.min.js')
+  real = path.join(root, 'module/m/dist/index.min.js')
+  # the spec names a path `fedep` has not created yet - the usual order on a cold start.
+  b.specmgr.update {type: \js, name: \x, src: [declared], codesrc: [declared], specsrc: ['p.pug']}
+  assert.equal b.specmgr.has-code(real), false, 'nothing links the two yet'
+  fs-extra.ensure-dir-sync path.join(root, lib 'm')
+  fs.symlink-sync path.join(root, 'module/m/dist'), path.join(root, lib 'm/main')
+  # the index stays open to a retry while any declared name is unresolved, so the link
+  # is adopted without anyone having to touch the spec again.
+  b.specmgr.realsrc-retry = 0
+  assert.ok b.specmgr.has-code(real), 'the link exists now'
+
+
+test 'the config file is recognised through an alias, not bundled as a source', ->
+  root = tmpdir!
+  write root, {
+    'bundle.json': JSON.stringify({js: {v: ['a.js']}})
+    'a.js': 'A;'
+  }
+  b = new bundle {base: root, logger: quiet, init-scan: false, config-file: 'bundle.json'}
+  # the same file, reached through a symlinked view of the whole tree ( `node_modules/
+  # @scope/web` -> `frontend/web`, which npm creates for a workspace ).
+  alias-root = root + '-alias'
+  fs.symlink-sync root, alias-root
+  reloaded = 0
+  b.load-cfg = -> reloaded := reloaded + 1
+  touched = []
+  b.specmgr.touch-code = (files) -> touched := touched ++ files
+
+  b.build [{file: path.join(alias-root, 'bundle.json'), mtime: 1}]
+
+  # old behaviour: the alias fell through to `touch-code`, which rebuilt the bundles
+  # without re-reading the spec that defines them.
+  assert.equal reloaded, 1, 'the config must be re-read'
+  assert.deepEqual touched, [], 'and not treated as an ordinary bundled source'

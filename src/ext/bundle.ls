@@ -48,6 +48,20 @@ specmgr = (o = {}) ->
   @codesrc = {}
   @specsrc = {}
   @deps = {}
+  # one file, several names. `get-path` writes the path a *page* would request
+  # ( `static/assets/lib/<pkg>/main/index.min.js` ), which is a symlink into
+  # `node_modules`, which is itself a symlink to the module's source tree; and when the
+  # frontend directory is an npm workspace it is reachable through `node_modules` too.
+  # chokidar follows all of that but reports each real file under exactly one of its
+  # aliases, not necessarily the one written here - so a rebuilt module fires an event
+  # that no literal lookup in `codesrc` matches, and the bundle keeps the old code with
+  # nothing logged. index the real paths as well, and consult that when the name we were
+  # given is not one we were told about.
+  @realsrc = null
+  # some name did not resolve when the index was last built - a module `fedep` has not
+  # linked yet. the index stays open to a retry until it does.
+  @unresolved = false
+  @realsrc-retry = 0
   # keep track of keys of spec been updated. batch write back cache by specmgr to reduce file access.
   @_dirty = new Set!
   @
@@ -81,14 +95,42 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     if !opt.init => @set-dirty s
     s
   set: (o = {}, opt = {}) -> @add o, ({force: true} <<< opt)
-  has-code: (f) -> !!@codesrc[f] or !!@deps[f]
+  # realpath -> the names we were given for it. rebuilt lazily rather than maintained in
+  # `link`: a source is usually declared before `fedep` has created the symlink that
+  # reaches it, so an entry computed at link time would be missing or stale.
+  build-realsrc: ->
+    @realsrc = {}
+    @unresolved = false
+    # one `realpath` per declared source, so an index that can never fully resolve ( an
+    # optional module nobody installed ) must not rebuild on every miss. a symlink that
+    # appears mid-session is still picked up within the second.
+    @realsrc-retry = Date.now! + 1000
+    for f in <[codesrc deps]> => for n of @[f]
+      try real = fs.realpath-sync n
+      catch e # not there yet, or a link to nothing. retry later.
+        @unresolved = true
+        continue
+      s = if @realsrc[real] => that else (@realsrc[real] = new Set!)
+      s.add n
+  # the declared names, if any, that are this same file under a different path.
+  real-of: (f) ->
+    if !@realsrc or (@unresolved and Date.now! > @realsrc-retry) => @build-realsrc!
+    try real = fs.realpath-sync f catch e => return []
+    return Array.from(@realsrc[real] or [])
+
+  has-code: (f) ->
+    if !!@codesrc[f] or !!@deps[f] => return true
+    return !!@real-of(f).length
   touch-code: (files, opt = {}) ->
     files = if Array.isArray(files) => files else [files]
     keys = new Set!
-    files.map (f) ~>
-      if typeof(f) == \object => f = f.file
+    add = (f) ~>
       if @codesrc[f] => Array.from(@codesrc[f]).for-each (k) ~> keys.add k
       if @deps[f] => Array.from(@deps[f]).for-each (k) ~> keys.add k
+    files.map (f) ~>
+      if typeof(f) == \object => f = f.file
+      if @codesrc[f] or @deps[f] => add f
+      else @real-of(f).map add
     @fire \build-by-spec, Array.from(keys).map((k) ~> @get k).filter(-> it), opt
 
   update: (o = {}) ->
@@ -158,6 +200,7 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     f = if o.codesrc => \codesrc else if o.specsrc => \specsrc else \deps
     s = if @[f][o[f]] => that else @[f][o[f]] = new Set!
     if !s => return
+    @realsrc = null
     s.add(@key o.spec)
 
   unlink: (o = {}) ->
@@ -165,6 +208,7 @@ specmgr.prototype = Object.create(Object.prototype) <<< do
     if !(s = @[f][o[f]]) => return
     s.delete @key o.spec
     if s.size => return
+    @realsrc = null
     delete @[f][o[f]]
 
   del-specsrc: (n) ->
@@ -317,7 +361,11 @@ build.prototype = Object.create(base.prototype) <<< do
     # a change on the config file and on a bundled source can arrive in the same batch.
     # returning early here used to drop the latter silently.
     [cfgs, rest] = [[], []]
-    files.map (f) ~> (if f.file == @cfgfn => cfgs else rest).push f
+    # the config file has aliases of its own when the frontend directory is reachable
+    # by more than one path. reading it as an ordinary source would rebuild the bundles
+    # without re-reading the spec that defines them. see `realsrc`.
+    is-cfg = (f) ~> @cfgfn and (f == @cfgfn or @specmgr.real-of(f).some (n) ~> n == @cfgfn)
+    files.map (f) ~> (if is-cfg(f.file) => cfgs else rest).push f
     if cfgs.length => @load-cfg!
     if rest.length => @specmgr.touch-code rest, opt
 
