@@ -1,6 +1,6 @@
 # Change Log
 
-## master
+## v0.1.9
 
  - bug fix:
    - a bundle source is matched by realpath as well as by the name it was declared
