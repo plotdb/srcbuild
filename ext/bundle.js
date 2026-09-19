@@ -68,6 +68,9 @@ specmgr = function(o){
   this.codesrc = {};
   this.specsrc = {};
   this.deps = {};
+  this.realsrc = null;
+  this.unresolved = false;
+  this.realsrcRetry = 0;
   this._dirty = new Set();
   return this;
 };
@@ -167,20 +170,58 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
       force: true
     }, opt));
   },
+  buildRealsrc: function(){
+    var i$, ref$, len$, f, lresult$, n, real, e, s, that, results$ = [];
+    this.realsrc = {};
+    this.unresolved = false;
+    this.realsrcRetry = Date.now() + 1000;
+    for (i$ = 0, len$ = (ref$ = ['codesrc', 'deps']).length; i$ < len$; ++i$) {
+      f = ref$[i$];
+      lresult$ = [];
+      for (n in this[f]) {
+        try {
+          real = fs.realpathSync(n);
+        } catch (e$) {
+          e = e$;
+          this.unresolved = true;
+          continue;
+        }
+        s = (that = this.realsrc[real])
+          ? that
+          : this.realsrc[real] = new Set();
+        lresult$.push(s.add(n));
+      }
+      results$.push(lresult$);
+    }
+    return results$;
+  },
+  realOf: function(f){
+    var real, e;
+    if (!this.realsrc || (this.unresolved && Date.now() > this.realsrcRetry)) {
+      this.buildRealsrc();
+    }
+    try {
+      real = fs.realpathSync(f);
+    } catch (e$) {
+      e = e$;
+      return [];
+    }
+    return Array.from(this.realsrc[real] || []);
+  },
   hasCode: function(f){
-    return !!this.codesrc[f] || !!this.deps[f];
+    if (!!this.codesrc[f] || !!this.deps[f]) {
+      return true;
+    }
+    return !!this.realOf(f).length;
   },
   touchCode: function(files, opt){
-    var keys, this$ = this;
+    var keys, add, this$ = this;
     opt == null && (opt = {});
     files = Array.isArray(files)
       ? files
       : [files];
     keys = new Set();
-    files.map(function(f){
-      if (typeof f === 'object') {
-        f = f.file;
-      }
+    add = function(f){
       if (this$.codesrc[f]) {
         Array.from(this$.codesrc[f]).forEach(function(k){
           return keys.add(k);
@@ -190,6 +231,16 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
         return Array.from(this$.deps[f]).forEach(function(k){
           return keys.add(k);
         });
+      }
+    };
+    files.map(function(f){
+      if (typeof f === 'object') {
+        f = f.file;
+      }
+      if (this$.codesrc[f] || this$.deps[f]) {
+        return add(f);
+      } else {
+        return this$.realOf(f).map(add);
       }
     });
     return this.fire('build-by-spec', Array.from(keys).map(function(k){
@@ -342,6 +393,7 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
     if (!s) {
       return;
     }
+    this.realsrc = null;
     return s.add(this.key(o.spec));
   },
   unlink: function(o){
@@ -357,6 +409,7 @@ specmgr.prototype = import$(Object.create(Object.prototype), {
     if (s.size) {
       return;
     }
+    this.realsrc = null;
     return ref1$ = (ref$ = this[f])[key$ = o[f]], delete ref$[key$], ref1$;
   },
   delSpecsrc: function(n){
@@ -632,15 +685,20 @@ build.prototype = import$(Object.create(base.prototype), {
     });
   },
   build: function(files, opt){
-    var ref$, cfgs, rest, this$ = this;
+    var ref$, cfgs, rest, isCfg, this$ = this;
     opt = typeof opt === 'boolean'
       ? {
         force: opt
       }
       : opt || {};
     ref$ = [[], []], cfgs = ref$[0], rest = ref$[1];
+    isCfg = function(f){
+      return this$.cfgfn && (f === this$.cfgfn || this$.specmgr.realOf(f).some(function(n){
+        return n === this$.cfgfn;
+      }));
+    };
     files.map(function(f){
-      return (f.file === this$.cfgfn ? cfgs : rest).push(f);
+      return (isCfg(f.file) ? cfgs : rest).push(f);
     });
     if (cfgs.length) {
       this.loadCfg();

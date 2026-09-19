@@ -1,5 +1,33 @@
 # Change Log
 
+## v0.1.9
+
+ - bug fix:
+   - a bundle source is matched by realpath as well as by the name it was declared
+     under. `get-path` writes the path a page requests -
+     `static/assets/lib/<pkg>/main/index.min.js` - which `fedep` makes a symlink into
+     `node_modules`, itself a symlink to the module's own tree; and when the frontend
+     directory is an npm workspace it is reachable through `node_modules` too. chokidar
+     follows all of that, but it installs one watcher per realpath and reports the file
+     under whichever alias reached it first, which is not necessarily the one the spec
+     holds. rebuilding such a module then fired an event that `has-code` rejected, so
+     the bundle silently kept the old code - nothing logged, and the failure surfaced in
+     the browser as a function that does not exist. the same aliasing hid the config
+     file, whose events would have been bundled as an ordinary source instead of
+     re-reading the spec. the index is built lazily and stays open to a retry while any
+     declared name is still unresolved, since a source is normally declared before
+     `fedep` has created the link that reaches it.
+   - lib.pug is looked up both where an npm install puts it ( `dist/lib.pug` ) and where
+     `fedep publish -g` leaves it ( `lib.pug`, the package root, since publishing
+     flattens dist/ ). only the first was tried, so against a github install the
+     injected include resolved to nothing and every doctype'd page - which is to say
+     every page - failed to build. the layout is a property of the install, not
+     something this module can assume, and `main` / `bin` being rewritten by the
+     publisher is precisely why nothing else noticed. the resolved spec is remembered
+     per builder: node caches resolution hits but not misses, and a miss costs about
+     three times a hit, so the flattened case would otherwise pay for it once per page.
+
+
 ## v0.1.8
 
  - bug fix:
