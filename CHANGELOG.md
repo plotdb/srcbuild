@@ -1,5 +1,13 @@
 # Change Log
 
+## v0.1.10
+
+ - bug fix: bundle sources are joined with a newline between two that would otherwise
+   share a line. a source ending in a line comment without a trailing newline -
+   `opentype.min.js` ends with `//# sourceMappingURL=...` - commented out the start of
+   the next one, so that source ( e.g. `@xlfont/load` ) silently never ran. empty
+   sources still add nothing.
+
 ## v0.1.9
 
  - bug fix:

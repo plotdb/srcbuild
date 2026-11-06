@@ -282,8 +282,23 @@ test 'a source that is mid-rebuild is read again rather than failing the bundle'
   b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
   set-timeout (-> fs-extra.output-file-sync late, 'BBB;'), 120
   <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
-  assert.strictEqual fs.read-file-sync(des(root, 'v.js')).to-string!, 'AAA;BBB;'
+  assert.strictEqual fs.read-file-sync(des(root, 'v.js')).to-string!, 'AAA;\nBBB;'
   assert.deepStrictEqual errs, [], "a source that arrives during the wait is not an error: #{JSON.stringify errs}"
+
+
+test 'a source ending in a line comment does not swallow the next one', ->
+  # opentype.min.js ends with `//# sourceMappingURL=...` and no newline; joined as is,
+  # the next source ( @xlfont/load ) was commented out and never ran.
+  root = write tmpdir!, {
+    "#{lib 'a/main/index.min.js'}": 'A=1;\n//# sourceMappingURL=a.min.js.map'
+    "#{lib 'b/main/index.min.js'}": 'B=2;'
+  }
+  b = mk root
+  src = <[a b]>.map -> path.join(root, lib("#it/main/index.min.js"))
+  b.specmgr.update {type: \js, name: \v, src: src, codesrc: src, specsrc: ['p.pug']}
+  <-! b.build-by-spec(b.specmgr.get({type: \js, name: \v}), {force: true}).then
+  code = fs.read-file-sync(des(root, 'v.min.js')).to-string!
+  assert.strictEqual code, 'A=1;\n//# sourceMappingURL=a.min.js.map\nB=2;'
 
 
 test 'a source that ships only its .min twin still bundles', ->

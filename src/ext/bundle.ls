@@ -2,6 +2,12 @@ require! <[path crypto @loadingio/debounce.js ../minify]>
 require! <[./base ../aux ../hashstore]>
 fs = require "fs-extra"
 
+# join bundle sources, with a newline between two that would otherwise share a line.
+# a file ending in a line comment and no newline ( e.g. opentype.min.js ends with
+# `//# sourceMappingURL=...` ) would comment out the start of the next one. empty sources add nothing.
+concat = (list) ->
+  list.filter(->it).reduce(((a, b) -> if !a or /\n$/.exec(a) => a + b else a + '\n' + b), '')
+
 spec = (o = {}) ->
   @mgr = o.manager
   @log = o.log
@@ -548,7 +554,7 @@ build.prototype = Object.create(base.prototype) <<< do
                 throw new Error(
                   "#type/#name: #{gone.length} of #{ret.length} sources unreadable; not written"
                 )
-              normal = ret.map(->it.code or it.code-min).join('')
+              normal = concat ret.map(->it.code or it.code-min)
               # off the main thread: this is where the seconds are. see minify.ls.
               # sources that ship their own `.min` twin never reach the worker.
               mins = ret.map (o) ~>
@@ -558,7 +564,7 @@ build.prototype = Object.create(base.prototype) <<< do
                 # the bundle. it used to be `undefined`, which `.join` drops silently -
                 # one bad source file and the bundle shipped without it.
                 minify.async-or-original type, o.code, {}, @log, o.name
-              Promise.all(mins).then (minified) -> {code: normal, code-min: minified.join('')}
+              Promise.all(mins).then (minified) -> {code: normal, code-min: concat minified}
 
       .then ({code, code-min}) ~>
         Promise.all [fs.write-file(des, code), fs.write-file(des-min, code-min)]
