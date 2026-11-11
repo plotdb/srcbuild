@@ -12,6 +12,12 @@
    `nodes.Unit` custom function. do not take `npm audit fix --force`'s advice here:
    it offers stylus 0.63.0 as a fix for a moderate `glob` advisory, which is a
    downgrade that brings the high-severity chain back.
+ - bug fix: `prepare` is a no-op when `dist/lib.pug` is not there. the script copies
+   lib.pug into `node_modules/@plotdb/srcbuild/dist` so an in-repo build resolves its
+   own copy, but `npm publish` runs it inside fedep's work folder, where dist/ has
+   already been flattened into the root - so `cp dist/lib.pug` failed and took
+   `fedep publish` down with it. nothing to copy there: the published tarball is the
+   flattened layout, which `pug.ls` already looks lib.pug up in.
 
 ## v0.1.10
 
