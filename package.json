@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "",
   "main": "./dist/main.js",
   "files": [
@@ -43,7 +43,7 @@
     "marked": "^4.0.10",
     "pug": "^3.0.3",
     "require-reload": "^0.2.2",
-    "stylus": "^0.55.0",
+    "stylus": "^0.64.0",
     "uglify-js": "^3.13.1",
     "uglifycss": "^0.0.29",
     "yargs": "^17.2.1"

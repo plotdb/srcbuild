@@ -1,5 +1,18 @@
 # Change Log
 
+## v0.1.11
+
+ - stylus 0.55 -> 0.64. 0.55 reached `decode-uri-component` through
+   `css -> source-map-resolve`, a chain carrying a percent-encoding DoS advisory, and
+   every project depending on srcbuild inherited it. 0.64 parses with
+   `@adobe/css-tools` instead, so the chain is gone. the rendered CSS is unchanged:
+   the repo's own stylesheets and a sheet exercising interpolation, block mixins,
+   `@extend`, loops, functions, nested media and `unquote` all compile byte for byte
+   as before, as does the inline `:stylus` pug filter with its `.define` /
+   `nodes.Unit` custom function. do not take `npm audit fix --force`'s advice here:
+   it offers stylus 0.63.0 as a fix for a moderate `glob` advisory, which is a
+   downgrade that brings the high-severity chain back.
+
 ## v0.1.10
 
  - bug fix: bundle sources are joined with a newline between two that would otherwise
