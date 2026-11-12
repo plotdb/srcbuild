@@ -1,7 +1,7 @@
 {
   "author": "zbryikt",
   "name": "@plotdb/srcbuild",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "",
   "main": "./dist/main.js",
   "files": [
@@ -13,6 +13,7 @@
   },
   "scripts": {
     "prepare": "if [ -f dist/lib.pug ] && [ ! -L ./node_modules/@plotdb/srcbuild/dist ]; then mkdir -p ./node_modules/@plotdb/srcbuild/dist && cp dist/lib.pug ./node_modules/@plotdb/srcbuild/dist/; fi",
+    "release": "npm publish && npx fedep publish -g --skip-dist",
     "start": "./node_modules/.bin/lsc watch.ls",
     "test": "node test/index.js"
   },
