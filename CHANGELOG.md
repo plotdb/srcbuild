@@ -1,5 +1,17 @@
 # Change Log
 
+## v0.1.12
+
+ - bug fix: the published layout is back to `dist/` ( `dist/main.js`, `dist/view/pug.js`, ... ),
+   as in every release up to v0.1.10. v0.1.11 was published with `fedep publish`, which
+   flattens `dist/` into the package root, so `require('@plotdb/srcbuild/dist/view/pug')`
+   - what servebase's engine does - failed and the server could not start. avoid v0.1.11.
+ - add `npm run release`: `npm publish`, then `fedep publish -g --skip-dist` for the github
+   release. publish this package with it, not with a bare `fedep publish`: dependents require
+   files under `dist/`, so the layout is part of the API. `--skip-dist` keeps the release
+   branch in the same `dist/` layout as npm ( `files` copied as is, `main` / `bin` untouched );
+   github releases up to v0.1.11 were flattened.
+
 ## v0.1.11
 
  - stylus 0.55 -> 0.64. 0.55 reached `decode-uri-component` through
